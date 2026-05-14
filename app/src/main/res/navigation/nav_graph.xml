@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/loginFragment">
+
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.azahara.proyecto_final_azahara.ui.LoginFragment"
+        android:label="Iniciar Sesión">
+        <action
+            android:id="@+id/action_login_to_registro"
+            app:destination="@id/registroFragment" />
+        <action
+            android:id="@+id/action_login_to_dashboard"
+            app:destination="@id/dashboardFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/registroFragment"
+        android:name="com.azahara.proyecto_final_azahara.ui.RegistroFragment"
+        android:label="Crear Cuenta" />
+
+    <fragment
+        android:id="@+id/dashboardFragment"
+        android:name="com.azahara.proyecto_final_azahara.ui.DashboardFragment"
+        android:label="Pastillero" />
+</navigation>

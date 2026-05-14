@@ -79,4 +79,9 @@ dependencies {
     // libreria Firestore
     implementation("com.google.firebase:firebase-firestore")
 
+    // --- DEPENDENCIAS DE NAVEGACIÓN Y UI ---
+    val navVersion = "2.7.7"
+    implementation("androidx.navigation:navigation-fragment-ktx:$navVersion")
+    implementation("androidx.navigation:navigation-ui-ktx:$navVersion")
+
 }
