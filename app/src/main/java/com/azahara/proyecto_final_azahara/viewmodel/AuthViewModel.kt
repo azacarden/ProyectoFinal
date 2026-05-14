@@ -1,33 +1,43 @@
 package com.azahara.proyecto_final_azahara.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.azahara.proyecto_final_azahara.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 /**
  * ViewModel para la Autenticación (Login y Registro).
- * Conecta la interfaz de usuario (UI) con el UserRepository.
  */
 class AuthViewModel(private val userRepository: UserRepository) : ViewModel() {
 
-    // 1. Estado interno (privado) que nosotros podemos modificar aquí dentro
     private val _estadoLogin = MutableStateFlow("Esperando credenciales...")
-
-    // 2. Estado público (solo lectura) que la pantalla (UI) va a observar
     val estadoLogin: StateFlow<String> = _estadoLogin.asStateFlow()
 
-    /**
-     * Función que llamará el botón de "Iniciar Sesión" desde la pantalla XML
-     */
     fun iniciarSesion(nombreUsuario: String, contrasena: String) {
-        // De momento, solo cambiamos el estado para ver que funciona.
-        // Más adelante, aquí llamaremos al userRepository.
-        if (nombreUsuario.isNotEmpty() && contrasena.isNotEmpty()) {
-            _estadoLogin.value = "Iniciando sesión para: $nombreUsuario"
-        } else {
-            _estadoLogin.value = "Error: Faltan datos"
+        // Validaciones en el cliente para evitar consultas innecesarias a la base de datos
+        if (nombreUsuario.isBlank() || contrasena.isBlank()) {
+            _estadoLogin.value = "Error: El usuario y la contraseña son obligatorios."
+            return
+        }
+
+        _estadoLogin.value = "Comprobando datos de forma segura..."
+
+        // Ejecución asíncrona sin bloquear la pantalla
+        viewModelScope.launch {
+            val resultado = userRepository.iniciarSesionLocal(nombreUsuario, contrasena)
+
+            // 3. Evaluamos el resultado de la operación
+            resultado.fold(
+                onSuccess = { usuario ->
+                    _estadoLogin.value = "¡Bienvenido, ${usuario.nombreUsuario}! (Rol: ${usuario.rol})"
+                },
+                onFailure = { excepcion ->
+                    _estadoLogin.value = "Acceso denegado: ${excepcion.message}"
+                }
+            )
         }
     }
 }

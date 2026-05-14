@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "436742430025",
+    "project_id": "pastillero-digital-a8ffd",
+    "storage_bucket": "pastillero-digital-a8ffd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:436742430025:android:d50ae92f666e3236aa8e98",
+        "android_client_info": {
+          "package_name": "com.azahara.proyecto_final_azahara"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAJ7zrG0YMQwjdb1TZ20yGIdpuIvx17Mbs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
