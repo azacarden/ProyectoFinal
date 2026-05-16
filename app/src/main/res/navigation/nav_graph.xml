@@ -14,6 +14,9 @@
         <action
             android:id="@+id/action_login_to_dashboard"
             app:destination="@id/dashboardFragment" />
+        <action
+            android:id="@+id/action_dashboard_to_medicationList"
+            app:destination="@id/medicationListFragment" />
     </fragment>
 
     <fragment
@@ -24,5 +27,19 @@
     <fragment
         android:id="@+id/dashboardFragment"
         android:name="com.azahara.proyecto_final_azahara.ui.DashboardFragment"
-        android:label="Pastillero" />
+        android:label="Pastillero">
+        <action
+            android:id="@+id/action_dashboard_to_addMedication"
+            app:destination="@id/addMedicationFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/addMedicationFragment"
+        android:name="com.azahara.proyecto_final_azahara.ui.AddMedicationFragment"
+        android:label="Añadir Medicamento" />
+
+    <fragment
+        android:id="@+id/medicationListFragment"
+        android:name="com.azahara.proyecto_final_azahara.ui.MedicationListFragment"
+        android:label="Mis Pastillas" />
 </navigation>

@@ -74,8 +74,9 @@ class MedicationRepository(
         awaitClose { listener.remove() }
     }
 
-    // Mantenemos la función original para la UI local
-    fun obtenerMedicamentosActivos(): Flow<List<String>> {
-        return emptyFlow()
+    // Modificamos el tipo de retorno para que devuelva la lista de objetos de tu tabla 'Medicamento'
+    fun obtenerMedicamentosActivos(): Flow<List<Medicamento>> {
+        // Retorna el flujo reactivo directo de Room
+        return medicamentoDao.getAllMedicamentos()
     }
 }
