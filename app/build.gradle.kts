@@ -1,24 +1,20 @@
-import shadow.bundletool.com.android.tools.r8.internal.Al
-
 plugins {
     alias(libs.plugins.android.application)
-    id("org.jetbrains.kotlin.android")
+    // Forzamos la versión exacta 1.9.24 directamente aquí para que Room no falle
+    id("org.jetbrains.kotlin.android") version "1.9.24"
     kotlin("kapt")
     id("com.google.gms.google-services")
 }
 
 android {
     namespace = "com.azahara.proyecto_final_azahara"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    // Corregido: Volvemos a poner 36 como exigen tus librerías del .toml
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.azahara.proyecto_final_azahara"
         minSdk = 26
-        targetSdk = 36
+        targetSdk = 36 // Volvemos a poner 36
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -39,12 +35,6 @@ android {
     }
 }
 
-kotlin {
-    compilerOptions {
-        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
-    }
-}
-
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
@@ -55,33 +45,31 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    // Dependencias para mi proyecto
-
-    val roomVersion = "2.6.1"
+    // Dependencias de Room (Fase 1)
+    // Cambiamos el 2.6.1 por el 2.7.0 para que sea compatible con Android Studio 9
+    val roomVersion = "2.7.0"
     implementation("androidx.room:room-runtime:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
     kapt("androidx.room:room-compiler:$roomVersion")
 
+    // Ciclo de vida y Corrutinas
     val lifecycleVersion = "2.7.0"
-    // Al añadir la librería room-ktx, le damos a Room el poder de entender las Corrutinas
-    // de Kotlin, permitiéndole manejar hilos secundarios sin congelar la app.
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycleVersion")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:$lifecycleVersion")
-
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
-    //Dependencias para Firebase
+    // Dependencias para Firebase (Fase 3)
     implementation(platform("com.google.firebase:firebase-bom:34.13.0"))
-
-    // Añadimos el módulo de autenticación (¡Sin poner la versión, la BoM se encarga!)
     implementation("com.google.firebase:firebase-auth")
-
-    // libreria Firestore
     implementation("com.google.firebase:firebase-firestore")
 
-    // --- DEPENDENCIAS DE NAVEGACIÓN Y UI ---
+    // Dependencias de Navegación y UI (Fase 5)
     val navVersion = "2.7.7"
     implementation("androidx.navigation:navigation-fragment-ktx:$navVersion")
     implementation("androidx.navigation:navigation-ui-ktx:$navVersion")
+    implementation(libs.androidx.gridlayout)
 
+    // --- DEPENDENCIAS PARA CONEXIÓN WEB (API CIMA) ---
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
 }

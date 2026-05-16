@@ -11,4 +11,6 @@
     <color name="md_theme_light_surface">#FFFFFF</color>
 
     <color name="text_primary">#2C3E50</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
 </resources>

@@ -55,7 +55,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="¿Cómo vas a usar la app?"
+        android:text="¿Eres Paciente o Cuidador?"
         android:textSize="18sp"
         android:textStyle="bold"
         android:layout_marginTop="24dp"
@@ -72,7 +72,7 @@
             android:id="@+id/rbPaciente"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Como Paciente"
+            android:text="Paciente"
             android:textSize="18sp"
             android:checked="true" />
 
@@ -80,7 +80,7 @@
             android:id="@+id/rbCuidador"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Como Cuidador"
+            android:text="Cuidador"
             android:textSize="18sp"
             android:layout_marginStart="16dp" />
     </RadioGroup>
