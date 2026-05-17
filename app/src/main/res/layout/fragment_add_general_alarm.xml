@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="?android:attr/colorBackground">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="24dp">
+
+        <TextView
+            android:id="@+id/tvTituloAddGeneral"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Programar Alarma"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorPrimary"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilTituloAlarma"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:hint="Asunto (Ej: Llamar a la farmacia)"
+            app:layout_constraintTop_toBottomOf="@id/tvTituloAddGeneral">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etTituloAlarma"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <LinearLayout
+            android:id="@+id/llFechaHoraAlarma"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="16dp"
+            android:weightSum="2"
+            app:layout_constraintTop_toBottomOf="@id/tilTituloAlarma">
+
+            <Button
+                android:id="@+id/btnElegirFechaAlarma"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:text="Elegir Fecha"
+                app:icon="@android:drawable/ic_menu_my_calendar" />
+
+            <Button
+                android:id="@+id/btnElegirHoraAlarma"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="Elegir Hora"
+                app:icon="@android:drawable/ic_menu_recent_history" />
+        </LinearLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilNotasAlarma"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:hint="Detalles o Notas adicionales"
+            app:layout_constraintTop_toBottomOf="@id/llFechaHoraAlarma">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etNotasAlarma"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textMultiLine" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <Button
+            android:id="@+id/btnGuardarAlarmaGeneral"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:layout_marginTop="32dp"
+            android:text="Guardar Alarma"
+            android:textSize="18sp"
+            app:layout_constraintTop_toBottomOf="@id/tilNotasAlarma" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>

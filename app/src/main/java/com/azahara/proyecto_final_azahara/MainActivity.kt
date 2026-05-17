@@ -1,8 +1,13 @@
 package com.azahara.proyecto_final_azahara
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
@@ -17,6 +22,19 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // ANDROID 13+ (Permisos de Notificación)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                // Si no tenemos el permiso, lanzamos la ventanita emergente para pedirlo
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    101
+                )
+            }
+        }
+
         // 1. Configuramos el Header (Toolbar)
         val toolbar = findViewById<MaterialToolbar>(R.id.topAppBar)
         setSupportActionBar(toolbar)
@@ -29,17 +47,13 @@ class MainActivity : AppCompatActivity() {
         // 3. REQUISITO TÉCNICO: Lógica de visibilidad y flecha de retroceso
         navController.addOnDestinationChangedListener { _, destination, _ ->
             when (destination.id) {
-                // Si estamos en Login o Registro -> Ocultamos el Header por completo
-                // (Los IDs de Login y Dashboard marcarán error hasta que creemos el grafo en la próxima tarea)
                 R.id.loginFragment -> {
                     toolbar.visibility = View.GONE
                 }
-                // Si estamos en el Panel Principal -> Mostramos Header pero SIN flecha de retroceso
                 R.id.dashboardFragment -> {
                     toolbar.visibility = View.VISIBLE
                     supportActionBar?.setDisplayHomeAsUpEnabled(false)
                 }
-                // Cualquier otra pantalla (Ajustes, Detalles...) -> Mostrar Header CON flecha
                 else -> {
                     toolbar.visibility = View.VISIBLE
                     supportActionBar?.setDisplayHomeAsUpEnabled(true)

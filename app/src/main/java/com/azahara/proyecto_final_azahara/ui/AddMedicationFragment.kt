@@ -179,7 +179,15 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
                         }
                         is CimaUiState.SaveSuccess -> {
                             progressBar.visibility = View.GONE
-                            Toast.makeText(requireContext(), "Medicamento procesado con éxito", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(requireContext(), "Medicamento guardado con éxito", Toast.LENGTH_SHORT).show()
+
+                            // -----------------------------------------------------
+                            // ¡EL DISPARADOR QUE FALTABA!
+                            // -----------------------------------------------------
+                            viewModel.ultimoMedicamentoGuardado?.let { med ->
+                                com.azahara.proyecto_final_azahara.alarm.AlarmHelper(requireContext()).programarAlarma(med)
+                            }
+
                             findNavController().navigateUp()
                         }
                     }

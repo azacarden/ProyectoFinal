@@ -7,64 +7,73 @@ import android.content.Context
 import android.content.Intent
 import com.azahara.proyecto_final_azahara.model.CitaMedica
 import com.azahara.proyecto_final_azahara.model.Medicamento
+import com.azahara.proyecto_final_azahara.model.AlarmaGeneral
 import java.util.*
 
 class AlarmHelper(private val context: Context) {
     private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
-    // Le decimos a Android Studio que nosotros nos hacemos cargo de la seguridad
     @SuppressLint("ScheduleExactAlarm")
     fun programarAlarma(medicamento: Medicamento) {
-        val intent = Intent(context, AlarmReceiver::class.java).apply {
-            putExtra("MED_NOMBRE", medicamento.nombre)
-            putExtra("MED_MENSAJE", medicamento.mensajePersonalizado)
-            putExtra("MED_ID", medicamento.id)
-        }
+        // Cortamos el texto por las comas. Ej: "08:00, 16:00" -> Crea dos alarmas separadas
+        val listaHoras = medicamento.horaToma.split(", ")
 
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            medicamento.id,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        listaHoras.forEachIndexed { index, horaTexto ->
+            val partes = horaTexto.trim().split(":")
 
-        val partes = medicamento.horaToma.split(":")
-        val calendar = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, partes[0].toInt())
-            set(Calendar.MINUTE, partes[1].toInt())
-            set(Calendar.SECOND, 0)
+            if (partes.size == 2) { // Nos aseguramos de que el formato sea HH:mm
+                val intent = Intent(context, AlarmReceiver::class.java).apply {
+                    putExtra("TIPO_ALARMA", "MEDICAMENTO")
+                    putExtra("MED_NOMBRE", medicamento.nombre)
+                    putExtra("MED_MENSAJE", medicamento.mensajePersonalizado)
+                    putExtra("MED_ID", medicamento.id)
+                }
 
-            if (before(Calendar.getInstance())) {
-                add(Calendar.DATE, 1)
+                // Sumamos el index al ID para que cada hora tenga su propio canal y no se pisen
+                val pendingIntent = PendingIntent.getBroadcast(
+                    context,
+                    (medicamento.id * 100) + index,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+
+                val calendar = Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, partes[0].toInt())
+                    set(Calendar.MINUTE, partes[1].toInt())
+                    set(Calendar.SECOND, 0)
+
+                    // Si la hora ya pasó hoy, la programamos para mañana
+                    if (before(Calendar.getInstance())) {
+                        add(Calendar.DATE, 1)
+                    }
+                }
+
+                try {
+                    alarmManager.setExactAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        calendar.timeInMillis,
+                        pendingIntent
+                    )
+                } catch (e: SecurityException) {
+                    e.printStackTrace()
+                }
             }
         }
-        // Envolvemos la llamada en un try/catch de seguridad
-        try {
-            alarmManager.setExactAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                calendar.timeInMillis,
-                pendingIntent
-            )
-        } catch (e: SecurityException) {
-            // Si el usuario ha bloqueado las alarmas en los ajustes, capturamos el error
-            // Aquí en el futuro podríamos enviar un aviso a la pantalla
-            e.printStackTrace()
-        }
     }
-    // --- FUNCIÓN PARA CITAS MÉDICAS ---
+
+    // -----------------------------------------------------
+    // 2. ALARMAS DE CITAS MÉDICAS (¡Las que faltaban!)
+    // -----------------------------------------------------
     @SuppressLint("ScheduleExactAlarm")
     fun programarAlarmaCita(cita: CitaMedica) {
         val intent = Intent(context, AlarmReceiver::class.java).apply {
-            // Le ponemos una "etiqueta" para que el Receiver sepa que esto es una cita y no una pastilla
             putExtra("TIPO_ALARMA", "CITA")
-            putExtra("CITA_ID", cita.id)
             putExtra("CITA_TITULO", cita.titulo)
             putExtra("CITA_ESPECIALISTA", cita.especialista)
             putExtra("CITA_NOTAS", cita.notas)
         }
 
-        // Le sumamos 10000 al ID para asegurarnos de que el ID de la cita nunca choque
-        // por accidente con el ID de una pastilla (si ambos fueran el ID 1, se sobrescribirían)
+        // Le sumamos 10000 al ID para crear un canal único
         val pendingIntent = PendingIntent.getBroadcast(
             context,
             cita.id + 10000,
@@ -72,34 +81,75 @@ class AlarmHelper(private val context: Context) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Calculamos a qué hora debe sonar la alarma:
-        // Hora de la cita (en milisegundos) MENOS los minutos de aviso previo (convertidos a milisegundos)
-        val milisegundosPrevios = cita.recordatorioPrevio * 60 * 1000L
-        val tiempoAlarma = cita.fechaHora - milisegundosPrevios
-
-        // Envolvemos en try/catch por si el móvil tiene restricciones severas de batería
         try {
+            // Se programa restando el tiempo de recordatorio previo (ej: 60 minutos antes)
+            val tiempoAviso = cita.fechaHora - (cita.recordatorioPrevio * 60 * 1000)
             alarmManager.setExactAndAllowWhileIdle(
                 AlarmManager.RTC_WAKEUP,
-                tiempoAlarma,
+                tiempoAviso,
                 pendingIntent
             )
         } catch (e: SecurityException) {
             e.printStackTrace()
         }
     }
+
     fun cancelarAlarmaCita(cita: CitaMedica) {
         val intent = Intent(context, AlarmReceiver::class.java).apply {
             putExtra("TIPO_ALARMA", "CITA")
         }
-        // Usamos exactamente el mismo ID único (+ 10000) para localizar la alarma correcta
         val pendingIntent = PendingIntent.getBroadcast(
             context,
             cita.id + 10000,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        // Le decimos al sistema operativo que la destruya
+        alarmManager.cancel(pendingIntent)
+    }
+
+    // -----------------------------------------------------
+    // 3. ALARMAS GENERALES
+    // -----------------------------------------------------
+    @SuppressLint("ScheduleExactAlarm")
+    fun programarAlarmaGeneral(alarma: AlarmaGeneral) {
+        if (!alarma.activa) return
+
+        val intent = Intent(context, AlarmReceiver::class.java).apply {
+            putExtra("TIPO_ALARMA", "GENERAL")
+            putExtra("ALARMA_ID", alarma.id)
+            putExtra("ALARMA_TITULO", alarma.titulo)
+            putExtra("ALARMA_NOTAS", alarma.descripcion)
+        }
+
+        // Le sumamos 20000 al ID para crear un canal único
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            alarma.id + 20000,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        try {
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                alarma.fechaHora,
+                pendingIntent
+            )
+        } catch (e: SecurityException) {
+            e.printStackTrace()
+        }
+    }
+
+    fun cancelarAlarmaGeneral(alarma: AlarmaGeneral) {
+        val intent = Intent(context, AlarmReceiver::class.java).apply {
+            putExtra("TIPO_ALARMA", "GENERAL")
+        }
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            alarma.id + 20000,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
         alarmManager.cancel(pendingIntent)
     }
 }

@@ -17,8 +17,10 @@ import kotlinx.coroutines.launch
 class AlarmReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
-        // Primero preguntamos: ¿Qué tipo de alarma eres?
+        // Primero preguntamos: ¿Qué tipo de alarma eres? Si no tiene etiqueta, suponemos que es de medicación.
         val tipoAlarma = intent.getStringExtra("TIPO_ALARMA") ?: "MEDICAMENTO"
+        android.util.Log.d("ALARMAS_AZAHARA", "¡EL RECEIVER HA SIDO LLAMADO!")
+        android.widget.Toast.makeText(context, "¡ALARMA DISPARADA!", android.widget.Toast.LENGTH_LONG).show()
 
         if (tipoAlarma == "CITA") {
             // -----------------------------------------------------
@@ -31,17 +33,28 @@ class AlarmReceiver : BroadcastReceiver() {
             val mensajeCompleto = "Especialista: $especialista\nNotas: $notas"
 
             // Usamos la misma función visual, pero adaptada a las citas
-            mostrarNotificacion(context, "Próxima cita: $tituloCita", mensajeCompleto)
+            mostrarNotificacion(context, "📅 Próxima cita: $tituloCita", mensajeCompleto)
+
+        } else if (tipoAlarma == "GENERAL") {
+            // -----------------------------------------------------
+            // 2. ¡NUEVO! ES UNA ALARMA GENERAL (Recordatorios)
+            // -----------------------------------------------------
+            val titulo = intent.getStringExtra("ALARMA_TITULO") ?: "Aviso"
+            val notas = intent.getStringExtra("ALARMA_NOTAS") ?: ""
+
+            // Reutilizamos la función visual para mostrar el recordatorio
+            mostrarNotificacion(context, "🔔 Aviso: $titulo", notas)
 
         } else {
             // -----------------------------------------------------
-            // 2. ES UNA ALARMA DE PASTILLA (El código que ya tenías)
+            // 3. ES UNA ALARMA DE PASTILLA (El código original)
             // -----------------------------------------------------
             val medicamentoId = intent.getIntExtra("MED_ID", 0)
             val nombreMedicamento = intent.getStringExtra("MED_NOMBRE") ?: "Medicamento"
             val mensaje = intent.getStringExtra("MED_MENSAJE") ?: "Es hora de tu toma."
 
-            mostrarNotificacion(context, nombreMedicamento, mensaje)
+            // Al título de la medicación le ponemos la pastillita para que destaque
+            mostrarNotificacion(context, "💊 ¡Toma de: $nombreMedicamento!", mensaje)
 
             // Guardamos en el Historial en segundo plano (solo para medicamentos)
             val pendingResult = goAsync()
@@ -80,11 +93,11 @@ class AlarmReceiver : BroadcastReceiver() {
             notificationManager.createNotificationChannel(channel)
         }
 
-        // 2. Construcción de la Notificación con los datos de la Tarea 14
+        // 2. Construcción de la Notificación
         val notification = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm) // Icono de sistema
-            .setContentTitle("💊 ¡Toma de: $titulo!") // Nombre del medicamento
-            .setContentText(mensaje) // "La pastilla azul del colesterol"
+            .setContentTitle(titulo) // ¡Ahora usamos la variable dinámica!
+            .setContentText(mensaje)
             .setStyle(NotificationCompat.BigTextStyle().bigText(mensaje)) // Permite ver el mensaje largo
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_ALARM)

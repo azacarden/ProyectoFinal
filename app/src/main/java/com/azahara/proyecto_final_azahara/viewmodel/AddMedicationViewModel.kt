@@ -29,6 +29,9 @@ class AddMedicationViewModel(
     private val _uiState = MutableStateFlow<CimaUiState>(CimaUiState.Idle)
     val uiState: StateFlow<CimaUiState> = _uiState.asStateFlow()
 
+    // Variable temporal para programar la alarma en el Fragment
+    var ultimoMedicamentoGuardado: Medicamento? = null
+
     fun buscarMedicamento(query: String) {
         if (query.isBlank()) return
         viewModelScope.launch {
@@ -42,7 +45,7 @@ class AddMedicationViewModel(
         }
     }
 
-    // Ahora recibe el objeto MedicamentoBasicoDto
+    // Carga los detalles clínicos desde la API de CIMA
     fun cargarDetalle(medicamento: MedicamentoBasicoDto) {
         viewModelScope.launch {
             _uiState.value = CimaUiState.Loading
@@ -55,36 +58,23 @@ class AddMedicationViewModel(
         }
     }
 
-    // Guardado normal (Modo Crear)
-    fun guardarMedicamentoLocal(nombre: String, hora: String, mensaje: String) {
-        viewModelScope.launch {
-            try {
-                val nuevoMedicamento = Medicamento(
-                    nombre = nombre,
-                    horaToma = hora,
-                    mensajePersonalizado = mensaje
-                )
-                medicamentoDao.insertMedicamento(nuevoMedicamento)
-                _uiState.value = CimaUiState.SaveSuccess
-            } catch (e: Exception) {
-                _uiState.value = CimaUiState.Error("Error al guardar localmente")
-            }
-        }
-    }
-
-    // Esta función es necesaria para que el botón "Guardar Cambios" no dé error
-// Actualiza tu función de Guardar para recibir los nuevos datos
+    // MODO CREAR: Guarda en Room y retiene el ID generado para la alarma
     fun guardarMedicamentoLocal(nombre: String, hora: String, mensaje: String, urlProspecto: String?, contraindicaciones: String?) {
         viewModelScope.launch {
             try {
-                val nuevoMedicamento = com.azahara.proyecto_final_azahara.model.Medicamento(
+                val nuevoMedicamento = Medicamento(
                     nombre = nombre,
                     horaToma = hora,
                     mensajePersonalizado = mensaje,
                     urlProspecto = urlProspecto,
                     contraindicaciones = contraindicaciones
                 )
-                medicamentoDao.insertMedicamento(nuevoMedicamento)
+                // Room nos devuelve el ID único en formato Long al insertar
+                val idGenerado = medicamentoDao.insertMedicamento(nuevoMedicamento)
+
+                // Guardamos una copia exacta con su ID real para que el Fragment encienda la alarma
+                ultimoMedicamentoGuardado = nuevoMedicamento.copy(id = idGenerado.toInt())
+
                 _uiState.value = CimaUiState.SaveSuccess
             } catch (e: Exception) {
                 _uiState.value = CimaUiState.Error("Error al guardar localmente")
@@ -92,12 +82,12 @@ class AddMedicationViewModel(
         }
     }
 
-    // Actualiza tu función de Editar para mantener o cambiar los nuevos datos
+    // MODO EDITAR: Actualiza los datos de una pastilla existente
     fun actualizarMedicamentoLocal(id: Int, nombre: String, hora: String, mensaje: String, urlProspecto: String?, contraindicaciones: String?) {
         viewModelScope.launch {
             try {
-                val medModificado = com.azahara.proyecto_final_azahara.model.Medicamento(
-                    id = id,
+                val medModificado = Medicamento(
+                    id = id, // Al pasar el mismo ID, Room sabe que debe sobrescribir
                     nombre = nombre,
                     horaToma = hora,
                     mensajePersonalizado = mensaje,
@@ -105,6 +95,10 @@ class AddMedicationViewModel(
                     contraindicaciones = contraindicaciones
                 )
                 medicamentoDao.updateMedicamento(medModificado)
+
+                // Guardamos el objeto modificado para actualizar su alarma en el sistema
+                ultimoMedicamentoGuardado = medModificado
+
                 _uiState.value = CimaUiState.SaveSuccess
             } catch (e: Exception) {
                 _uiState.value = CimaUiState.Error("Error al actualizar medicamento")

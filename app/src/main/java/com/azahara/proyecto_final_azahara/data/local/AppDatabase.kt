@@ -8,42 +8,37 @@ import com.azahara.proyecto_final_azahara.model.Historial
 import com.azahara.proyecto_final_azahara.model.Medicamento
 import com.azahara.proyecto_final_azahara.model.Usuario
 import com.azahara.proyecto_final_azahara.model.CitaMedica
+import com.azahara.proyecto_final_azahara.model.AlarmaGeneral // Nuevo import
 
 /**
- * Base de Datos Central de la Aplicación
- * Agrupa las entidades y expone los DAOs
+ * Base de Datos Central de la Aplicación (Versión 3)
  */
 @Database(
-    entities = [Usuario::class, Medicamento::class, Historial::class, CitaMedica::class],
-    version = 2, // 1. ¡SUBIMOS LA VERSIÓN A 2!
+    entities = [Usuario::class, Medicamento::class, Historial::class, CitaMedica::class, AlarmaGeneral::class],
+    version = 3, // ¡SUBIMOS A VERSIÓN 3 POR LA NUEVA TABLA!
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
 
-    // Exponemos los DAOs construidos en la Tarea 5
     abstract fun usuarioDao(): UsuarioDao
     abstract fun medicamentoDao(): MedicamentoDao
     abstract fun historialDao(): HistorialDao
-
     abstract fun citaMedicaDao(): CitaMedicaDao
+    abstract fun alarmaGeneralDao(): AlarmaGeneralDao // Exponemos el nuevo DAO
 
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
-        /**
-         * Patrón Singleton para asegurar que solo exista una instancia
-         * de la base de datos en toda la aplicación.
-         */
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "pastillero_db" // Nombre del archivo de la base de datos
+                    "pastillero_db"
                 )
-                    .fallbackToDestructiveMigration()
-                    .build() 
+                    .fallbackToDestructiveMigration() // Escudo protector para desarrollo
+                    .build()
 
                 INSTANCE = instance
                 instance
