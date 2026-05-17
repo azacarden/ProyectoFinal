@@ -45,7 +45,7 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    // Dependencias de Room (Fase 1)
+    // Dependencias de Room
     // Cambiamos el 2.6.1 por el 2.7.0 para que sea compatible con Android Studio 9
     val roomVersion = "2.7.0"
     implementation("androidx.room:room-runtime:$roomVersion")
@@ -58,12 +58,12 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:$lifecycleVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
-    // Dependencias para Firebase (Fase 3)
+    // Dependencias para Firebase
     implementation(platform("com.google.firebase:firebase-bom:34.13.0"))
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
 
-    // Dependencias de Navegación y UI (Fase 5)
+    // Dependencias de Navegación y UI
     val navVersion = "2.7.7"
     implementation("androidx.navigation:navigation-fragment-ktx:$navVersion")
     implementation("androidx.navigation:navigation-ui-ktx:$navVersion")
@@ -72,4 +72,13 @@ dependencies {
     // --- DEPENDENCIAS PARA CONEXIÓN WEB (API CIMA) ---
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    // Base de datos en la nube para vincular cuentas (¡Ahora con su versión correcta!)
+    implementation("com.google.firebase:firebase-firestore-ktx:24.10.0")
+
+    // Librería para DIBUJAR el código QR en pantalla
+    implementation("com.google.zxing:core:3.5.3")
+
+    // Librería para LEER códigos QR con la cámara fácilmente
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 }

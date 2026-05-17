@@ -28,20 +28,21 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
             Toast.makeText(requireContext(), "Navegando a Historial", Toast.LENGTH_SHORT).show()
         }
 
-        // Botón 4: Citas Médicas y Alarmas (¡CONECTADO PARA EL PASO [UI-06]!)
+        // Botón 4: Citas Médicas y Alarmas
         view.findViewById<MaterialCardView>(R.id.cardAlarmas).setOnClickListener {
             // Quitamos el Toast de mentira y ejecutamos la acción real del nav_graph
             findNavController().navigate(R.id.action_dashboard_to_appointmentList)
         }
 
-        // Botón 5: Cuidadores
+        // Botón 5: Cuidadores / Perfil QR
         view.findViewById<MaterialCardView>(R.id.cardCuidadores).setOnClickListener {
-            Toast.makeText(requireContext(), "Navegando a Cuidadores", Toast.LENGTH_SHORT).show()
+            findNavController().navigate(R.id.action_dashboard_to_profile)
         }
 
-        // Botón 6: Mi Perfil
+        // Botón 6: Mi Perfil / Ajustes
         view.findViewById<MaterialCardView>(R.id.cardPerfil).setOnClickListener {
-            Toast.makeText(requireContext(), "Navegando a Mi Perfil", Toast.LENGTH_SHORT).show()
+            // ¡AHORA SÍ VIAJA A LOS AJUSTES REALES!
+            findNavController().navigate(R.id.action_dashboard_to_settings)
         }
 
     }

@@ -57,7 +57,10 @@ class AddGeneralAlarmFragment : Fragment(R.layout.fragment_add_general_alarm) {
             btnGuardar.text = "Guardar Cambios"
 
             viewLifecycleOwner.lifecycleScope.launch {
-                val alarma = withContext(Dispatchers.IO) { dao.getAlarmaById(idAlarmaEditar) }
+                // Corregido: getAlarmaById con su tipografía correcta
+                val alarma: com.azahara.proyecto_final_azahara.model.AlarmaGeneral? = withContext(Dispatchers.IO) {
+                    dao.getAlarmaById(idAlarmaEditar)
+                }
                 alarma?.let {
                     etTitulo.setText(it.titulo)
                     etNotas.setText(it.descripcion)
@@ -79,10 +82,10 @@ class AddGeneralAlarmFragment : Fragment(R.layout.fragment_add_general_alarm) {
         btnFecha.setOnClickListener {
             val datePicker = MaterialDatePicker.Builder.datePicker()
                 .setTitleText("Día de la alarma")
-                .setSelection(calendarioAlarma.timeInMillis)
+                .setSelection(calendarioAlarma.timeInMillis) // Corregido: calendarioAlarma
                 .build()
 
-            datePicker.addOnPositiveButtonClickListener { milisegundos ->
+            datePicker.addOnPositiveButtonClickListener { milisegundos: Long ->
                 calendarioAlarma.timeInMillis = milisegundos
                 fechaSeleccionada = true
                 val formatoVisual = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
@@ -123,7 +126,6 @@ class AddGeneralAlarmFragment : Fragment(R.layout.fragment_add_general_alarm) {
             if (idAlarmaEditar == -1) {
                 viewModel.guardarAlarma(titulo, calendarioAlarma.timeInMillis, notas)
             } else {
-                // Cancelamos la alarma vieja en el sistema construyendo un objeto temporal solo con el ID
                 val alarmaAntigua = com.azahara.proyecto_final_azahara.model.AlarmaGeneral(id = idAlarmaEditar, titulo = "", fechaHora = 0L, descripcion = "")
                 com.azahara.proyecto_final_azahara.alarm.AlarmHelper(requireContext()).cancelarAlarmaGeneral(alarmaAntigua)
 
@@ -134,11 +136,10 @@ class AddGeneralAlarmFragment : Fragment(R.layout.fragment_add_general_alarm) {
         // Observar resultado de Room
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.guardadoExitoso.collect { exito ->
+                viewModel.guardadoExitoso.collect { exito: Boolean? ->
                     if (exito == true) {
                         Toast.makeText(requireContext(), "Alarma programada con éxito", Toast.LENGTH_SHORT).show()
 
-                        // ¡MAGIA! Encendemos la alarma en el sistema Android
                         viewModel.ultimaAlarmaGuardada?.let { alarma ->
                             com.azahara.proyecto_final_azahara.alarm.AlarmHelper(requireContext()).programarAlarmaGeneral(alarma)
                         }

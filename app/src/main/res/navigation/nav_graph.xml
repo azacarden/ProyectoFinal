@@ -37,6 +37,10 @@
         <action
             android:id="@+id/action_dashboard_to_appointmentList"
             app:destination="@id/appointmentListFragment" />
+
+        <action
+            android:id="@+id/action_dashboard_to_settings"
+            app:destination="@id/settingsFragment" />
     </fragment>
 
     <fragment
@@ -68,5 +72,19 @@
         android:id="@+id/addAppointmentFragment"
         android:name="com.azahara.proyecto_final_azahara.ui.AddAppointmentFragment"
         android:label="Programar Cita" />
+
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.azahara.proyecto_final_azahara.ui.SettingsFragment"
+        android:label="Configuración" />
+
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="com.azahara.proyecto_final_azahara.ui.ProfileFragment"
+        android:label="Mi Perfil">
+    <action
+        android:id="@+id/action_dashboard_to_profile"
+        app:destination="@id/profileFragment" />
+    </fragment>
 
 </navigation>
