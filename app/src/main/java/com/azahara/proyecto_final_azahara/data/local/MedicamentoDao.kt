@@ -12,19 +12,19 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface MedicamentoDao {
 
+    // ¡ESTE ES EL CAMBIO! Añadimos ": Long" al final de la función
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMedicamento(medicamento: Medicamento): Long
+
+    @Query("SELECT * FROM medicamentos")
+    fun getAllMedicamentos(): Flow<List<Medicamento>>
+
+    @Query("SELECT * FROM medicamentos WHERE id = :id")
+    suspend fun getMedicamentoById(id: Int): Medicamento?
 
     @Update
     suspend fun updateMedicamento(medicamento: Medicamento)
 
     @Delete
     suspend fun deleteMedicamento(medicamento: Medicamento)
-
-    // Nota: Flow ya es asíncrono por naturaleza, por lo que NO necesita la palabra "suspend"
-    @Query("SELECT * FROM medicamentos")
-    fun getAllMedicamentos(): Flow<List<Medicamento>>
-
-    @Query("SELECT * FROM medicamentos WHERE id = :id")
-    suspend fun getMedicamentoPorId(id: Int): Medicamento?
 }

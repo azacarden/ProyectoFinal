@@ -20,5 +20,7 @@ data class Medicamento(
 
     // Mensaje personalizado para ayudar a identificar la pastilla
     // Ejemplo: 'La pastilla azul del colesterol'
-    val mensajePersonalizado: String
+    val mensajePersonalizado: String,
+    val urlProspecto: String? = null,      // NUEVA COLUMNA
+    val contraindicaciones: String? = null // NUEVA COLUMNA
 )

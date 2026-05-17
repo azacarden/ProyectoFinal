@@ -17,37 +17,47 @@ import kotlinx.coroutines.launch
 class AlarmReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
-        // Extrae los datos del Intent
-        val medicamentoId = intent.getIntExtra("MED_ID", 0)
-        val nombreMedicamento = intent.getStringExtra("MED_NOMBRE") ?: "Medicamento"
-        val mensaje = intent.getStringExtra("MED_MENSAJE") ?: "Es hora de tu toma."
+        // Primero preguntamos: ¿Qué tipo de alarma eres?
+        val tipoAlarma = intent.getStringExtra("TIPO_ALARMA") ?: "MEDICAMENTO"
 
-        // Muestra la alerta visual al paciente
-        mostrarNotificacion(context, nombreMedicamento, mensaje)
+        if (tipoAlarma == "CITA") {
+            // -----------------------------------------------------
+            // 1. ES UNA ALARMA DE CITA MÉDICA
+            // -----------------------------------------------------
+            val tituloCita = intent.getStringExtra("CITA_TITULO") ?: "Cita Médica"
+            val especialista = intent.getStringExtra("CITA_ESPECIALISTA") ?: ""
+            val notas = intent.getStringExtra("CITA_NOTAS") ?: ""
 
-        // PROCESAMIENTO EN SEGUNDO PLANO
-        // Le pedimos a Android tiempo extra para no matar el proceso
-        val pendingResult = goAsync()
+            val mensajeCompleto = "Especialista: $especialista\nNotas: $notas"
 
-        // Usamos Coroutines en hilos secundarios (Dispatchers.IO)
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                // Instanciamos la base de datos local
-                val db = AppDatabase.getDatabase(context)
+            // Usamos la misma función visual, pero adaptada a las citas
+            mostrarNotificacion(context, "Próxima cita: $tituloCita", mensajeCompleto)
 
-                // Registramos en el Historial que la alarma ha sido notificada
-                val nuevoRegistro = Historial(
-                    usuarioId = 1, // Nota: Por simplicidad, ponemos 1. En producción, obtendríamos el ID del usuario actual.
-                    medicamentoId = medicamentoId,
-                    fechaHoraReal = System.currentTimeMillis(),
-                    estado = "Notificada"
-                )
+        } else {
+            // -----------------------------------------------------
+            // 2. ES UNA ALARMA DE PASTILLA (El código que ya tenías)
+            // -----------------------------------------------------
+            val medicamentoId = intent.getIntExtra("MED_ID", 0)
+            val nombreMedicamento = intent.getStringExtra("MED_NOMBRE") ?: "Medicamento"
+            val mensaje = intent.getStringExtra("MED_MENSAJE") ?: "Es hora de tu toma."
 
-                // Guardamos en la base de datos sin bloquear la UI
-                db.historialDao().insertHistorial(nuevoRegistro)
-            } finally {
-                // Avisamos a Android de que el hilo secundario ha terminado su trabajo
-                pendingResult.finish()
+            mostrarNotificacion(context, nombreMedicamento, mensaje)
+
+            // Guardamos en el Historial en segundo plano (solo para medicamentos)
+            val pendingResult = goAsync()
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val db = AppDatabase.getDatabase(context)
+                    val nuevoRegistro = Historial(
+                        usuarioId = 1,
+                        medicamentoId = medicamentoId,
+                        fechaHoraReal = System.currentTimeMillis(),
+                        estado = "Notificada"
+                    )
+                    db.historialDao().insertHistorial(nuevoRegistro)
+                } finally {
+                    pendingResult.finish()
+                }
             }
         }
     }

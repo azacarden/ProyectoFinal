@@ -13,14 +13,13 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Botón 1: Mis Pastillas
+        // Botón 1: Mis Pastillas (Consulta reactiva del paso [UI-05])
         view.findViewById<MaterialCardView>(R.id.cardMedicacion).setOnClickListener {
             findNavController().navigate(R.id.action_dashboard_to_medicationList)
         }
 
-        // Botón 2: Nueva Toma
+        // Botón 2: Nueva Toma (Buscador API CIMA del paso [UI-04])
         view.findViewById<MaterialCardView>(R.id.cardAdd).setOnClickListener {
-            // Ejecutamos la acción que acabamos de definir en el nav_graph
             findNavController().navigate(R.id.action_dashboard_to_addMedication)
         }
 
@@ -29,9 +28,10 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
             Toast.makeText(requireContext(), "Navegando a Historial", Toast.LENGTH_SHORT).show()
         }
 
-        // Botón 4: Alarmas
+        // Botón 4: Citas Médicas y Alarmas (¡CONECTADO PARA EL PASO [UI-06]!)
         view.findViewById<MaterialCardView>(R.id.cardAlarmas).setOnClickListener {
-            Toast.makeText(requireContext(), "Navegando a Alarmas", Toast.LENGTH_SHORT).show()
+            // Quitamos el Toast de mentira y ejecutamos la acción real del nav_graph
+            findNavController().navigate(R.id.action_dashboard_to_appointmentList)
         }
 
         // Botón 5: Cuidadores
@@ -43,5 +43,6 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         view.findViewById<MaterialCardView>(R.id.cardPerfil).setOnClickListener {
             Toast.makeText(requireContext(), "Navegando a Mi Perfil", Toast.LENGTH_SHORT).show()
         }
+
     }
 }

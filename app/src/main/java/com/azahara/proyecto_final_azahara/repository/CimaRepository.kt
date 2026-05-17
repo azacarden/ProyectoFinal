@@ -5,11 +5,13 @@ import com.azahara.proyecto_final_azahara.data.network.MedicamentoBasicoDto
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+// 1. Modificamos el modelo para reflejar lo que tú has pedido
 data class MedicamentoDetalle(
     val nregistro: String,
     val nombre: String,
-    val indicaciones: String?,
-    val posologia: String?
+    val viasAdministracion: String?,
+    val contraindicaciones: String?,
+    val urlProspecto: String?
 )
 
 class CimaRepository(private val api: CimaApi) {
@@ -20,30 +22,37 @@ class CimaRepository(private val api: CimaApi) {
         }
     }
 
-    suspend fun obtenerDetalleCompleto(nregistro: String, nombre: String): MedicamentoDetalle {
+    // Le pasamos el objeto entero para poder sacar sus vías y su prospecto
+    suspend fun obtenerDetalleCompleto(medicamento: MedicamentoBasicoDto): MedicamentoDetalle {
         return withContext(Dispatchers.IO) {
-            try {
-                // Intentamos pedir la lista de secciones al CIMA (¡El formato Array correcto!)
-                val secciones = api.getFichaTecnica(nregistro)
 
-                val indicaciones = secciones.find { it.seccion == "4.1" }?.contenido
-                val posologia = secciones.find { it.seccion == "4.2" }?.contenido
+            // Juntamos las vías (Ej: VÍA ORAL)
+            val vias = medicamento.viasAdministracion?.joinToString(", ") { it.nombre }
+
+            // Buscamos el documento tipo "2" (El prospecto) y sacamos su enlace web
+            val prospectoUrl = medicamento.docs?.find { it.tipo == 2 }?.let { it.urlHtml ?: it.url }
+
+            try {
+                // Buscamos las contraindicaciones (Sección 4.3 de la AEMPS)
+                val secciones = api.getFichaTecnica(medicamento.nregistro)
+                val contraindicaciones = secciones.find { it.seccion == "4.3" }?.contenido
 
                 MedicamentoDetalle(
-                    nregistro = nregistro,
-                    nombre = nombre,
-                    indicaciones = indicaciones,
-                    posologia = posologia
+                    nregistro = medicamento.nregistro,
+                    nombre = medicamento.nombre,
+                    viasAdministracion = vias,
+                    contraindicaciones = contraindicaciones,
+                    urlProspecto = prospectoUrl
                 )
             } catch (e: Exception) {
-                // Si la API no tiene la ficha y nos manda un error o un formato loco,
-                // lo atrapamos en silencio. Devolvemos el detalle vacío para que
-                // la pantalla NO muestre error y el usuario pueda rellenarlo a mano.
+                // Si la pastilla no tiene ficha técnica digitalizada, no rompemos la app,
+                // simplemente devolvemos las vías y el prospecto, sin contraindicaciones
                 MedicamentoDetalle(
-                    nregistro = nregistro,
-                    nombre = nombre,
-                    indicaciones = null,
-                    posologia = null
+                    nregistro = medicamento.nregistro,
+                    nombre = medicamento.nombre,
+                    viasAdministracion = vias,
+                    contraindicaciones = null,
+                    urlProspecto = prospectoUrl
                 )
             }
         }

@@ -7,14 +7,15 @@ import androidx.room.RoomDatabase
 import com.azahara.proyecto_final_azahara.model.Historial
 import com.azahara.proyecto_final_azahara.model.Medicamento
 import com.azahara.proyecto_final_azahara.model.Usuario
+import com.azahara.proyecto_final_azahara.model.CitaMedica
 
 /**
  * Base de Datos Central de la Aplicación
  * Agrupa las entidades y expone los DAOs
  */
 @Database(
-    entities = [Usuario::class, Medicamento::class, Historial::class],
-    version = 1,
+    entities = [Usuario::class, Medicamento::class, Historial::class, CitaMedica::class],
+    version = 2, // 1. ¡SUBIMOS LA VERSIÓN A 2!
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -23,6 +24,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun usuarioDao(): UsuarioDao
     abstract fun medicamentoDao(): MedicamentoDao
     abstract fun historialDao(): HistorialDao
+
+    abstract fun citaMedicaDao(): CitaMedicaDao
 
     companion object {
         @Volatile
@@ -38,7 +41,10 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "pastillero_db" // Nombre del archivo de la base de datos
-                ).build()
+                )
+                    .fallbackToDestructiveMigration()
+                    .build() 
+
                 INSTANCE = instance
                 instance
             }

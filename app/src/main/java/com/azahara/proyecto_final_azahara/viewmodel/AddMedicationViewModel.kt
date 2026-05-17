@@ -42,33 +42,72 @@ class AddMedicationViewModel(
         }
     }
 
-    fun cargarDetalle(nregistro: String, nombre: String) {
+    // Ahora recibe el objeto MedicamentoBasicoDto
+    fun cargarDetalle(medicamento: MedicamentoBasicoDto) {
         viewModelScope.launch {
             _uiState.value = CimaUiState.Loading
             try {
-                val detalle = repository.obtenerDetalleCompleto(nregistro, nombre)
+                val detalle = repository.obtenerDetalleCompleto(medicamento)
                 _uiState.value = CimaUiState.SuccessDetail(detalle)
             } catch (e: Exception) {
-                // ¡AQUÍ ESTÁ EL CAMBIO! Ahora nos mostrará el motivo real del fallo
                 _uiState.value = CimaUiState.Error("Fallo CIMA: ${e.message}")
             }
         }
     }
 
+    // Guardado normal (Modo Crear)
     fun guardarMedicamentoLocal(nombre: String, hora: String, mensaje: String) {
         viewModelScope.launch {
             try {
-                // Usamos la clase Medicamento exacta de tu model/Medicamento.kt
                 val nuevoMedicamento = Medicamento(
                     nombre = nombre,
                     horaToma = hora,
                     mensajePersonalizado = mensaje
                 )
-
                 medicamentoDao.insertMedicamento(nuevoMedicamento)
                 _uiState.value = CimaUiState.SaveSuccess
             } catch (e: Exception) {
-                _uiState.value = CimaUiState.Error("Error al guardar en base de datos")
+                _uiState.value = CimaUiState.Error("Error al guardar localmente")
+            }
+        }
+    }
+
+    // Esta función es necesaria para que el botón "Guardar Cambios" no dé error
+// Actualiza tu función de Guardar para recibir los nuevos datos
+    fun guardarMedicamentoLocal(nombre: String, hora: String, mensaje: String, urlProspecto: String?, contraindicaciones: String?) {
+        viewModelScope.launch {
+            try {
+                val nuevoMedicamento = com.azahara.proyecto_final_azahara.model.Medicamento(
+                    nombre = nombre,
+                    horaToma = hora,
+                    mensajePersonalizado = mensaje,
+                    urlProspecto = urlProspecto,
+                    contraindicaciones = contraindicaciones
+                )
+                medicamentoDao.insertMedicamento(nuevoMedicamento)
+                _uiState.value = CimaUiState.SaveSuccess
+            } catch (e: Exception) {
+                _uiState.value = CimaUiState.Error("Error al guardar localmente")
+            }
+        }
+    }
+
+    // Actualiza tu función de Editar para mantener o cambiar los nuevos datos
+    fun actualizarMedicamentoLocal(id: Int, nombre: String, hora: String, mensaje: String, urlProspecto: String?, contraindicaciones: String?) {
+        viewModelScope.launch {
+            try {
+                val medModificado = com.azahara.proyecto_final_azahara.model.Medicamento(
+                    id = id,
+                    nombre = nombre,
+                    horaToma = hora,
+                    mensajePersonalizado = mensaje,
+                    urlProspecto = urlProspecto,
+                    contraindicaciones = contraindicaciones
+                )
+                medicamentoDao.updateMedicamento(medModificado)
+                _uiState.value = CimaUiState.SaveSuccess
+            } catch (e: Exception) {
+                _uiState.value = CimaUiState.Error("Error al actualizar medicamento")
             }
         }
     }

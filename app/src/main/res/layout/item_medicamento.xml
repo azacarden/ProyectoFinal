@@ -23,30 +23,83 @@
                 android:id="@+id/tvNombreMed"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_toStartOf="@id/btnBorrarMedicamento"
+                android:layout_alignParentStart="true"
                 android:text="Nombre Pastilla"
-                android:textSize="20sp"
+                android:textSize="22sp"
                 android:textStyle="bold"
                 android:textColor="?attr/colorPrimary" />
 
-            <TextView
-                android:id="@+id/tvHoraMed"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+            <ImageButton
+                android:id="@+id/btnBorrarMedicamento"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:layout_alignParentEnd="true"
-                android:text="00:00"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="?attr/colorSecondary" />
+                android:layout_centerInParent="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_delete"
+                app:tint="#D32F2F" />
         </RelativeLayout>
 
-        <TextView
-            android:id="@+id/tvMensajeMed"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:orientation="horizontal"
             android:layout_marginTop="8dp"
-            android:text="Mensaje descriptivo"
-            android:textSize="16sp"
-            android:textColor="#555555" />
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/ic_menu_recent_history"
+                app:tint="?attr/colorSecondary" />
+
+            <TextView
+                android:id="@+id/tvHoraMed"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Horas: 08:00"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorSecondary" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="12dp"
+            android:padding="8dp"
+            android:background="#F5F5F5">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Descripción / Notas:"
+                android:textColor="#555555"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvMensajeMed"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Tomar después de desayunar."
+                android:textSize="16sp"
+                android:textColor="#333333" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnVerProspectoItem"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Ver Prospecto Oficial"
+            android:visibility="gone"
+            app:icon="@android:drawable/ic_dialog_info" />
 
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

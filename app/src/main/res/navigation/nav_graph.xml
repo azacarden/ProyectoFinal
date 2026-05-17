@@ -14,9 +14,6 @@
         <action
             android:id="@+id/action_login_to_dashboard"
             app:destination="@id/dashboardFragment" />
-        <action
-            android:id="@+id/action_dashboard_to_medicationList"
-            app:destination="@id/medicationListFragment" />
     </fragment>
 
     <fragment
@@ -28,9 +25,18 @@
         android:id="@+id/dashboardFragment"
         android:name="com.azahara.proyecto_final_azahara.ui.DashboardFragment"
         android:label="Pastillero">
+
         <action
             android:id="@+id/action_dashboard_to_addMedication"
             app:destination="@id/addMedicationFragment" />
+
+        <action
+            android:id="@+id/action_dashboard_to_medicationList"
+            app:destination="@id/medicationListFragment" />
+
+        <action
+            android:id="@+id/action_dashboard_to_appointmentList"
+            app:destination="@id/appointmentListFragment" />
     </fragment>
 
     <fragment
@@ -41,5 +47,26 @@
     <fragment
         android:id="@+id/medicationListFragment"
         android:name="com.azahara.proyecto_final_azahara.ui.MedicationListFragment"
-        android:label="Mis Pastillas" />
+        android:label="Mis Pastillas" >
+
+        <action
+            android:id="@+id/action_medicationList_to_addMedication"
+            app:destination="@id/addMedicationFragment" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/appointmentListFragment"
+        android:name="com.azahara.proyecto_final_azahara.ui.AppointmentListFragment"
+        android:label="Mis Citas Médicas">
+        <action
+            android:id="@+id/action_appointmentList_to_addAppointment"
+            app:destination="@id/addAppointmentFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/addAppointmentFragment"
+        android:name="com.azahara.proyecto_final_azahara.ui.AddAppointmentFragment"
+        android:label="Programar Cita" />
+
 </navigation>
