@@ -13,7 +13,6 @@ interface HistorialDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertHistorial(historial: Historial): Long
 
-    // Obtenemos el historial de un usuario concreto, ordenado del más reciente al más antiguo
     @Query("SELECT * FROM historial_tomas WHERE usuarioId = :usuarioId ORDER BY fechaHoraReal DESC")
     fun getHistorialPorUsuario(usuarioId: Int): Flow<List<Historial>>
 }

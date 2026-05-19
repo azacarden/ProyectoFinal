@@ -1,12 +1,10 @@
 package com.azahara.proyecto_final_azahara.model
 
 import androidx.room.Entity
-import androidx.room.PrimaryKey
 import androidx.room.ForeignKey
+import androidx.room.Index
+import androidx.room.PrimaryKey
 
-/**
- * Entidad que registra el historial de tomas de medicación
- */
 @Entity(
     tableName = "historial_tomas",
     foreignKeys = [
@@ -17,26 +15,22 @@ import androidx.room.ForeignKey
             onDelete = ForeignKey.CASCADE
         ),
         ForeignKey(
-            entity = Medicamento::class,
+            entity = HorarioMedicamento::class,
             parentColumns = ["id"],
-            childColumns = ["medicamentoId"],
+            childColumns = ["horarioId"],
             onDelete = ForeignKey.CASCADE
         )
+    ],
+    indices = [
+        Index(value = ["usuarioId"]),
+        Index(value = ["horarioId"])  // <--- OBLIGATORIO: Indexa las búsquedas relacionales
     ]
 )
 data class Historial(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-
-    // Relación con el usuario que debe tomar la medicina
     val usuarioId: Int,
-
-    // Relación con el medicamento específico
-    val medicamentoId: Int,
-
-    // El momento exacto en el que el usuario marcó la toma
-    val fechaHoraReal: Long,
-
-    // Estado de la toma (tomada/no tomada)
-    val estado: String
+    val horarioId: Int, // <--- KEY COMPLIANCE: Conecta con la toma exacta del día
+    val fechaHoraReal: Long, // Timestamp en milisegundos
+    val estado: String // "Tomada", "Olvidada", "Omitida"
 )

@@ -55,7 +55,7 @@ interface CimaApi {
 object RetrofitClient {
     private const val BASE_URL = "https://cima.aemps.es/cima/rest/"
 
-    // 1. Creamos un traductor Gson "relajado" que no se asuste con el formato del CIMA
+    // 1. Creamos un traductor Gson "relajado" que no choque con el formato del CIMA
     private val gson = GsonBuilder()
         .setLenient()
         .create()

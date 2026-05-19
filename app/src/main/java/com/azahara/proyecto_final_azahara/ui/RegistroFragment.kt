@@ -7,37 +7,59 @@ import android.widget.EditText
 import android.widget.RadioGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.azahara.proyecto_final_azahara.R
+import com.azahara.proyecto_final_azahara.data.local.AppDatabase
+import com.azahara.proyecto_final_azahara.repository.UserRepository
+import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.launch
 
 class RegistroFragment : Fragment(R.layout.fragment_registro) {
+
+    private lateinit var userRepository: UserRepository
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        val db = AppDatabase.getDatabase(requireContext())
+        userRepository = UserRepository(db.usuarioDao(), FirebaseAuth.getInstance())
+
         val etUsuario = view.findViewById<EditText>(R.id.etUsuarioRegistro)
-        val etCorreo = view.findViewById<EditText>(R.id.etCorreoRegistro)
         val etPassword = view.findViewById<EditText>(R.id.etPasswordRegistro)
         val rgRol = view.findViewById<RadioGroup>(R.id.rgRol)
         val btnRegistrar = view.findViewById<Button>(R.id.btnRegistrar)
 
         btnRegistrar.setOnClickListener {
-            val usuario = etUsuario.text.toString()
-            val correo = etCorreo.text.toString()
-            val password = etPassword.text.toString()
+            val usuario = etUsuario.text.toString().trim()
+            val password = etPassword.text.toString().trim()
 
-            // Validaciones de cliente
-            if (usuario.isBlank() || correo.isBlank() || password.isBlank()) {
+            if (usuario.isBlank() || password.isBlank()) {
                 Toast.makeText(requireContext(), "Faltan datos por rellenar", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            // Identificar el rol seleccionado
             val rol = if (rgRol.checkedRadioButtonId == R.id.rbPaciente) "Paciente" else "Cuidador"
+            val correoGenerado = if (usuario.contains("@")) usuario else "$usuario@pastillero.app"
 
-            // TODO: Conectar con AuthViewModel para guardar en Room y Firebase
-            Toast.makeText(requireContext(), "Cuenta creada como $rol", Toast.LENGTH_SHORT).show()
-            findNavController().navigateUp() // Volver al Login tras registrarse
+            viewLifecycleOwner.lifecycleScope.launch {
+                val resultado = userRepository.registrarUsuarioLocalYSincronizar(
+                    nombre = usuario,
+                    correo = correoGenerado,
+                    contrasenaPlana = password,
+                    rol = rol
+                )
+
+                resultado.fold(
+                    onSuccess = {
+                        Toast.makeText(requireContext(), "Cuenta registrada con éxito para $usuario", Toast.LENGTH_LONG).show()
+                        findNavController().navigateUp()
+                    },
+                    onFailure = { excepcion ->
+                        Toast.makeText(requireContext(), excepcion.message, Toast.LENGTH_SHORT).show()
+                    }
+                )
+            }
         }
     }
 }

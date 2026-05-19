@@ -2,73 +2,76 @@ package com.azahara.proyecto_final_azahara.repository
 
 import com.azahara.proyecto_final_azahara.data.local.UsuarioDao
 import com.azahara.proyecto_final_azahara.model.Usuario
+import com.azahara.proyecto_final_azahara.utils.CryptoUtils
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
-/**
- * Repositorio de Usuarios.
- * Actuará como la "Single Source of Truth" coordinando Room y Firebase.
- */
 class UserRepository(
     private val usuarioDao: UsuarioDao,
-    // Ahora el repositorio también tiene acceso a la nube
     private val firebaseAuth: FirebaseAuth
 ) {
 
     /**
-     * Registra al usuario localmente y vuelca los datos a la nube.
+     * Valida el login de forma 100% offline aplicando criptografía SHA-256.
      */
-    suspend fun registrarUsuarioLocalYSincronizar(nombre: String, contrasena: String, rol: String): Result<Usuario> {
-
-        // Usamos Dispatchers.IO para operar en hilos de ejecución
-        // secundarios sin bloquear la interfaz de usuario (UI).
+    suspend fun iniciarSesionLocal(nombre: String, contrasenaPlana: String): Result<Usuario> {
         return withContext(Dispatchers.IO) {
             try {
-                // Guardar en la base de datos local (Room - Offline)
-                val nuevoUsuario = Usuario(nombreUsuario = nombre, contrasena = contrasena, rol = rol)
-                val idLocal = usuarioDao.insertUsuario(nuevoUsuario)
-                val usuarioGuardado = nuevoUsuario.copy(id = idLocal.toInt())
+                // 1. Transformamos la contraseña introducida al mismo formato hash guardado en Room
+                val hashBuscado = CryptoUtils.sha256(contrasenaPlana)
 
-                // Sincronización asíncrona hacia Firebase Auth
-                // Firebase Auth exige obligatoriamente un formato de correo electrónico (ej: a@a.com).
-                // Si el usuario se llama "Juan", internamente le creamos un correo ficticio para la nube.
-                val emailParaFirebase = if (nombre.contains("@")) nombre else "$nombre@pastillero.app"
+                // 2. Consultamos la base de datos de forma segura
+                val usuarioEncontrado = usuarioDao.obtenerUsuarioPorNombre(nombre)
 
-                // Ejecutamos la petición a la red. El comando .await() pausa esta corrutina
-                // hasta que Firebase responde, pero al estar en Dispatchers.IO, el móvil no se congela.
-                firebaseAuth.createUserWithEmailAndPassword(emailParaFirebase, contrasena).await()
-
-                // Si tanto Room como Firebase han ido bien, devolvemos el éxito
-                Result.success(usuarioGuardado)
-
+                if (usuarioEncontrado != null && usuarioEncontrado.contrasenaHash == hashBuscado) {
+                    Result.success(usuarioEncontrado)
+                } else {
+                    Result.failure(Exception("Usuario o contraseña incorrectos."))
+                }
             } catch (e: Exception) {
-                // Si falla la red o la base de datos, capturamos el error
-                Result.failure(Exception("Error en registro/sincronización: ${e.localizedMessage}"))
+                Result.failure(Exception("Error en la base de datos local: ${e.localizedMessage}"))
             }
         }
     }
 
-    /**
-     * Validar el login contra la base de datos local (Offline).
-     */
-    suspend fun iniciarSesionLocal(nombre: String, contrasena: String): Result<Usuario> {
-        return try {
-            val usuarioEncontrado = usuarioDao.login(nombre, contrasena)
-            if (usuarioEncontrado != null) {
-                Result.success(usuarioEncontrado)
-            } else {
-                Result.failure(Exception("Credenciales incorrectas o usuario no registrado."))
-            }
-        } catch (e: Exception) {
-            Result.failure(Exception("Error de base de datos: ${e.localizedMessage}"))
-        }
-    }
+    suspend fun registrarUsuarioLocalYSincronizar(
+        nombre: String,
+        correo: String,
+        contrasenaPlana: String,
+        rol: String
+    ): Result<Usuario> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val contrasenaHash = CryptoUtils.sha256(contrasenaPlana)
 
-    fun obtenerUsuarioActual(): Flow<String> {
-        return emptyFlow()
+                val nuevoUsuario = Usuario(
+                    nombreUsuario = nombre,
+                    correo = correo,
+                    contrasenaHash = contrasenaHash,
+                    rol = rol
+                )
+
+                val idGenerado = usuarioDao.insertUsuario(nuevoUsuario)
+                var usuarioGuardado = nuevoUsuario.copy(id = idGenerado.toInt())
+
+                try {
+                    val authResult = firebaseAuth.createUserWithEmailAndPassword(correo, contrasenaPlana).await()
+                    val firebaseUser = authResult.user
+
+                    if (firebaseUser != null) {
+                        usuarioGuardado = usuarioGuardado.copy(firebaseUid = firebaseUser.uid)
+                        usuarioDao.updateUsuario(usuarioGuardado)
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("UserRepository", "Sincronización diferida o fallida: ${e.message}")
+                }
+
+                Result.success(usuarioGuardado)
+            } catch (e: Exception) {
+                Result.failure(Exception("Error al registrar en base de datos local: ${e.localizedMessage}"))
+            }
+        }
     }
 }

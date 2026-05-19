@@ -4,18 +4,23 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.azahara.proyecto_final_azahara.model.AlarmaGeneral
+import com.azahara.proyecto_final_azahara.model.CitaMedica
 import com.azahara.proyecto_final_azahara.model.Historial
+import com.azahara.proyecto_final_azahara.model.HorarioMedicamento
 import com.azahara.proyecto_final_azahara.model.Medicamento
 import com.azahara.proyecto_final_azahara.model.Usuario
-import com.azahara.proyecto_final_azahara.model.CitaMedica
-import com.azahara.proyecto_final_azahara.model.AlarmaGeneral // Nuevo import
 
-/**
- * Base de Datos Central de la Aplicación (Versión 3)
- */
 @Database(
-    entities = [Usuario::class, Medicamento::class, Historial::class, CitaMedica::class, AlarmaGeneral::class],
-    version = 3, // ¡SUBIMOS A VERSIÓN 3 POR LA NUEVA TABLA!
+    entities = [
+        Usuario::class,
+        Medicamento::class,
+        HorarioMedicamento::class, // <--- INTEGRADO: Entidad de horarios atómicos
+        Historial::class,
+        CitaMedica::class,
+        AlarmaGeneral::class
+    ],
+    version = 4, // <--- ACTUALIZADO: Incrementado para aplicar los cambios de esquema
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -24,7 +29,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun medicamentoDao(): MedicamentoDao
     abstract fun historialDao(): HistorialDao
     abstract fun citaMedicaDao(): CitaMedicaDao
-    abstract fun alarmaGeneralDao(): AlarmaGeneralDao // Exponemos el nuevo DAO
+    abstract fun alarmaGeneralDao(): AlarmaGeneralDao
 
     companion object {
         @Volatile
@@ -37,9 +42,8 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "pastillero_db"
                 )
-                    .fallbackToDestructiveMigration() // Escudo protector para desarrollo
+                    .fallbackToDestructiveMigration()
                     .build()
-
                 INSTANCE = instance
                 instance
             }

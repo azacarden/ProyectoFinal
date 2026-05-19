@@ -41,6 +41,10 @@
         <action
             android:id="@+id/action_dashboard_to_settings"
             app:destination="@id/settingsFragment" />
+
+        <action
+            android:id="@+id/action_dashboard_to_profile"
+            app:destination="@id/profileFragment" />
     </fragment>
 
     <fragment
@@ -81,10 +85,6 @@
     <fragment
         android:id="@+id/profileFragment"
         android:name="com.azahara.proyecto_final_azahara.ui.ProfileFragment"
-        android:label="Mi Perfil">
-    <action
-        android:id="@+id/action_dashboard_to_profile"
-        app:destination="@id/profileFragment" />
-    </fragment>
+        android:label="Mi Perfil" />
 
 </navigation>

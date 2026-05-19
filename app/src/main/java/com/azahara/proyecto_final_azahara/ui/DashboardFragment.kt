@@ -13,12 +13,12 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Botón 1: Mis Pastillas (Consulta reactiva del paso [UI-05])
+        // Botón 1: Mis Pastillas
         view.findViewById<MaterialCardView>(R.id.cardMedicacion).setOnClickListener {
             findNavController().navigate(R.id.action_dashboard_to_medicationList)
         }
 
-        // Botón 2: Nueva Toma (Buscador API CIMA del paso [UI-04])
+        // Botón 2: Nueva Toma
         view.findViewById<MaterialCardView>(R.id.cardAdd).setOnClickListener {
             findNavController().navigate(R.id.action_dashboard_to_addMedication)
         }
@@ -30,20 +30,21 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
 
         // Botón 4: Citas Médicas y Alarmas
         view.findViewById<MaterialCardView>(R.id.cardAlarmas).setOnClickListener {
-            // Quitamos el Toast de mentira y ejecutamos la acción real del nav_graph
             findNavController().navigate(R.id.action_dashboard_to_appointmentList)
         }
 
-        // Botón 5: Cuidadores / Perfil QR
+        // Botón 5: Cuidadores / Perfil QR (¡Esta acción ya coincide perfectamente con el nav_graph!)
         view.findViewById<MaterialCardView>(R.id.cardCuidadores).setOnClickListener {
-            findNavController().navigate(R.id.action_dashboard_to_profile)
+            val bundle = Bundle().apply {
+                // Pasamos el nombre del usuario (puedes recuperar el que inició sesión)
+                putString("NOMBRE_USUARIO_LOGUEADO", "Azahara")
+            }
+            findNavController().navigate(R.id.action_dashboard_to_profile, bundle)
         }
 
         // Botón 6: Mi Perfil / Ajustes
         view.findViewById<MaterialCardView>(R.id.cardPerfil).setOnClickListener {
-            // ¡AHORA SÍ VIAJA A LOS AJUSTES REALES!
             findNavController().navigate(R.id.action_dashboard_to_settings)
         }
-
     }
 }

@@ -1,12 +1,14 @@
 package com.azahara.proyecto_final_azahara.data.remote
 
 /**
- * Objeto de Transferencia de Datos para sincronizar los Medicamentos con Firebase.
+ * DTO para transferir y escuchar la medicación en la nube (Firestore).
+ * Incluye los horarios embebidos de forma nativa como una lista NoSQL.
  */
 data class MedicamentoDTO(
-    // Guardamos el ID que tenía en la base de datos local para mantener la referencia
     val idLocal: Int = 0,
     val nombre: String = "",
-    val horaToma: String = "",
-    val mensajePersonalizado: String = ""
+    val mensajePersonalizado: String = "",
+    val horarios: List<String> = emptyList(), // Ej: ["08:00", "20:00"]
+    val urlProspecto: String? = null,
+    val contraindicaciones: String? = null
 )

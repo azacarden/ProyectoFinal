@@ -13,16 +13,18 @@ import kotlinx.coroutines.launch
 
 class GeneralAlarmViewModel(private val dao: AlarmaGeneralDao) : ViewModel() {
 
-    // CORREGIDO: Cambiado getAllAlarmas() por tu función real obtenerTodasLasAlarmas()
     val alarmasActivas: StateFlow<List<AlarmaGeneral>> = dao.obtenerTodasLasAlarmas()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
     private val _guardadoExitoso = MutableStateFlow<Boolean?>(null)
     val guardadoExitoso: StateFlow<Boolean?> = _guardadoExitoso.asStateFlow()
 
     var ultimaAlarmaGuardada: AlarmaGeneral? = null
 
-    // MODO CREAR
     fun guardarAlarma(titulo: String, fechaHoraMilis: Long, descripcion: String) {
         viewModelScope.launch {
             try {
@@ -31,7 +33,6 @@ class GeneralAlarmViewModel(private val dao: AlarmaGeneralDao) : ViewModel() {
                     fechaHora = fechaHoraMilis,
                     descripcion = descripcion
                 )
-                // CORREGIDO: Usamos tu función insertAlarmaGeneral()
                 val idGenerado = dao.insertAlarmaGeneral(nuevaAlarma)
                 ultimaAlarmaGuardada = nuevaAlarma.copy(id = idGenerado.toInt())
                 _guardadoExitoso.value = true
@@ -41,7 +42,6 @@ class GeneralAlarmViewModel(private val dao: AlarmaGeneralDao) : ViewModel() {
         }
     }
 
-    // MODO EDITAR
     fun actualizarAlarma(id: Int, titulo: String, fechaHoraMilis: Long, descripcion: String, activa: Boolean) {
         viewModelScope.launch {
             try {
@@ -52,7 +52,6 @@ class GeneralAlarmViewModel(private val dao: AlarmaGeneralDao) : ViewModel() {
                     descripcion = descripcion,
                     activa = activa
                 )
-                // CORREGIDO: Usamos tu función updateAlarmaGeneral()
                 dao.updateAlarmaGeneral(alarmaModificada)
                 ultimaAlarmaGuardada = alarmaModificada
                 _guardadoExitoso.value = true
@@ -62,11 +61,13 @@ class GeneralAlarmViewModel(private val dao: AlarmaGeneralDao) : ViewModel() {
         }
     }
 
-    // MODO BORRAR
     fun borrarAlarma(alarma: AlarmaGeneral) {
         viewModelScope.launch {
-            // CORREGIDO: Tu DAO pide el "id" (Int), así que le pasamos alarma.id en vez del objeto entero
-            dao.eliminarAlarmaGeneral(alarma.id)
+            try {
+                dao.eliminarAlarmaGeneral(alarma.id)
+            } catch (e: Exception) {
+                android.util.Log.e("GeneralAlarmViewModel", "Error al eliminar alarma local", e)
+            }
         }
     }
 
