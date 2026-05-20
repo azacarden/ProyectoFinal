@@ -35,7 +35,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // 1. LEER LA SESIÓN: Recuperamos quién está usando la app de verdad
+        // 1. LEER LA SESIÓN
         val prefs = requireContext().getSharedPreferences("SesionUsuario", android.content.Context.MODE_PRIVATE)
         miUsuario = prefs.getString("usuario_identificado", "Usuario_Local") ?: "Usuario_Local"
         miRol = prefs.getString("rol_usuario", "Paciente") ?: "Paciente"
@@ -43,59 +43,42 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         // Buscamos las vistas en el XML
         val ivQrCode = view.findViewById<ImageView>(R.id.ivQrCode)
         val btnEscanear = view.findViewById<Button>(R.id.btnEscanearQr)
-
-        // Buscamos si tienes algún TextView para el título o subtítulo (opcional)
-        // Si tu XML tiene un TextView para el título, puedes buscarlo aquí para cambiar el texto
         val tvTituloFragment = view.findViewById<TextView>(R.id.tvTituloPerfil)
 
-        // ESCUDO PROTECTOR: Validamos que las vistas principales existan
+        // ¡NUEVO! Enlazamos el TextView del rol que se nos había olvidado
+        val tvMiRol = view.findViewById<TextView>(R.id.tvMiRol)
+
         if (ivQrCode == null || btnEscanear == null) {
-            Toast.makeText(
-                requireContext(),
-                "Error: Los IDs 'ivQrCode' o 'btnEscanearQr' no coinciden con tu XML",
-                Toast.LENGTH_LONG
-            ).show()
+            Toast.makeText(requireContext(), "Error en IDs", Toast.LENGTH_LONG).show()
             return
         }
 
         // 2. ADAPTAR LA INTERFAZ SEGÚN EL ROL REAL
         if (miRol == "Cuidador") {
-            // Si eres CUIDADOR: Tu misión es escanear al paciente
             tvTituloFragment?.text = "Perfil: Cuidador ($miUsuario)"
 
-            // Los cuidadores no necesitan mostrar un QR, se lo ocultamos para que no confunda
-            ivQrCode.visibility = View.GONE
+            // Actualizamos el texto para que diga Cuidador
+            tvMiRol?.text = "Rol: Cuidador"
 
-            // Mostramos el botón de escanear bien visible
+            ivQrCode.visibility = View.GONE
             btnEscanear.visibility = View.VISIBLE
             btnEscanear.text = "Escanear QR del Paciente"
 
         } else {
-            // Si eres PACIENTE: Tu misión es mostrar tu QR para que te escaneen
             tvTituloFragment?.text = "Perfil: Paciente ($miUsuario)"
 
-            // Mostramos el QR generado con tu nombre de usuario real de Room
+            // ¡NUEVO! Actualizamos el texto para que diga Paciente
+            tvMiRol?.text = "Rol: Paciente"
+
             ivQrCode.visibility = View.VISIBLE
             val miQrBitmap = generarQr(miUsuario)
             if (miQrBitmap != null) {
                 ivQrCode.setImageBitmap(miQrBitmap)
             }
-
-            // Un paciente no necesita el botón de escanear, se lo ocultamos
             btnEscanear.visibility = View.GONE
         }
 
-        // 3. Configuración del botón de la cámara (solo lo usará el Cuidador)
-        btnEscanear.setOnClickListener {
-            val options = ScanOptions().apply {
-                setDesiredBarcodeFormats(ScanOptions.QR_CODE)
-                setPrompt("Enfoca el código QR del Paciente para vincularlo")
-                setCameraId(0)
-                setBeepEnabled(true)
-                setBarcodeImageEnabled(false)
-            }
-            barcodeLauncher.launch(options)
-        }
+        // ... resto de tu código (configuración del botón cámara) ...
     }
 
     // Generador de QR

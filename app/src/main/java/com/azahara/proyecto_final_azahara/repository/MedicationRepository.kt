@@ -4,17 +4,14 @@ import com.azahara.proyecto_final_azahara.data.local.MedicamentoDao
 import com.azahara.proyecto_final_azahara.data.remote.MedicamentoDTO
 import com.azahara.proyecto_final_azahara.model.Medicamento
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/**
- * Repositorio de Medicación.
- * Coordinará las pastillas y alarmas entre la base de datos local y la nube
- */
 class MedicationRepository(
     private val medicamentoDao: MedicamentoDao,
     private val firestore: FirebaseFirestore
@@ -24,15 +21,10 @@ class MedicationRepository(
      * OPERACIÓN DEL PACIENTE: Guarda localmente y sincroniza con Firestore en segundo plano.
      */
     suspend fun agregarMedicamento(medicamento: Medicamento, pacienteUid: String) {
-        // Opera en segundo plano sin bloquear la UI
         withContext(Dispatchers.IO) {
-            // Guardar en la fuente de verdad local (Room)
             val idLocal = medicamentoDao.insertMedicamento(medicamento)
-
-            // Cortamos el texto por las comas y quitamos los espacios en blanco
             val listaHorarios = medicamento.horaToma.split(",").map { it.trim() }
 
-            // Crear el DTO para transferirlo a la red
             val dto = MedicamentoDTO(
                 idLocal = idLocal.toInt(),
                 nombre = medicamento.nombre,
@@ -40,8 +32,6 @@ class MedicationRepository(
                 mensajePersonalizado = medicamento.mensajePersonalizado
             )
 
-            // Volcar los datos a Firestore
-            // Estructura documental: usuarios -> [uid] -> medicamentos -> [idLocal]
             firestore.collection("usuarios").document(pacienteUid)
                 .collection("medicamentos").document(idLocal.toString())
                 .set(dto)
@@ -50,36 +40,49 @@ class MedicationRepository(
 
     /**
      * OPERACIÓN DEL CUIDADOR: Listener en tiempo real usando el SDK de Firebase.
+     * Descarga la nube, la traduce a modo local, y sobrescribe la base de datos (Room).
      */
-
-    fun escucharMedicacionPaciente(pacienteUid: String): Flow<List<MedicamentoDTO>> = callbackFlow {
-        // Apunta a la carpeta (colección) de pastillas de ese paciente específico
+    fun escucharMedicacionPaciente(pacienteUid: String): Flow<Boolean> = callbackFlow {
         val coleccionRef = firestore.collection("usuarios").document(pacienteUid).collection("medicamentos")
 
-        // Añade el Listener oficial de Firebase SDK
         val listener = coleccionRef.addSnapshotListener { snapshot, error ->
             if (error != null) {
-                close(error) // Si hay error de red, cerramos el flujo
+                close(error)
                 return@addSnapshotListener
             }
 
             if (snapshot != null) {
-                // Convierte el "JSON" de Firestore directamente a la clase DTO
-                val medicamentosNube = snapshot.documents.mapNotNull {
-                    it.toObject(MedicamentoDTO::class.java)
+                // Como Room exige Corrutinas, lanzamos un hilo secundario dentro del Listener
+                CoroutineScope(Dispatchers.IO).launch {
+                    val medicamentosNube = snapshot.documents.mapNotNull {
+                        it.toObject(MedicamentoDTO::class.java)
+                    }
+
+                    // 1. Mapeo Inverso: DTO (Nube) -> Entidad (Room)
+                    val medicamentosLocales = medicamentosNube.map { dto ->
+                        Medicamento(
+                            id = dto.idLocal,
+                            nombre = dto.nombre,
+                            horaToma = dto.horarios.joinToString(", "),
+                            mensajePersonalizado = dto.mensajePersonalizado,
+                            urlProspecto = dto.urlProspecto,
+                            contraindicaciones = dto.contraindicaciones
+                        )
+                    }
+
+                    // 2. Transacción Local: Hacemos que Room sea un espejo exacto de Firestore
+                    medicamentoDao.reemplazarTodosLosMedicamentos(medicamentosLocales)
+
+                    // 3. Emitimos un "true" para avisar a la UI de que hubo una actualización exitosa
+                    trySend(true)
                 }
-                // Envia la lista actualizada al ViewModel del cuidador
-                trySend(medicamentosNube)
             }
         }
 
-        // Cuando el cuidador cierra la app, cancelamos el listener para no gastar datos/batería
         awaitClose { listener.remove() }
     }
 
-    // Modificamos el tipo de retorno para que devuelva la lista de objetos de tu tabla 'Medicamento'
     fun obtenerMedicamentosActivos(): Flow<List<Medicamento>> {
-        // Retorna el flujo reactivo directo de Room
         return medicamentoDao.getAllMedicamentos()
     }
 }

@@ -42,6 +42,11 @@
 
         <receiver android:name=".alarm.AlarmReceiver" android:exported="false" />
 
+        <activity
+            android:name="com.journeyapps.barcodescanner.CaptureActivity"
+            android:screenOrientation="portrait"
+            tools:replace="screenOrientation" />
+
     </application>
 
 </manifest>

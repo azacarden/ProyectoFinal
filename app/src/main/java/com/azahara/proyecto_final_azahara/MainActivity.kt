@@ -61,6 +61,27 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+    /**
+     * Este metodo intercepta todos los toques en la pantalla.
+     * Si detecta que tocaste fuera de un campo de texto, esconde el teclado.
+     */
+    override fun dispatchTouchEvent(event: android.view.MotionEvent): Boolean {
+        if (event.action == android.view.MotionEvent.ACTION_DOWN) {
+            val viewActual = currentFocus
+            if (viewActual is android.widget.EditText) {
+                val rectanguloFuera = android.graphics.Rect()
+                viewActual.getGlobalVisibleRect(rectanguloFuera)
+
+                // Si el toque fue fuera de los límites del campo de texto
+                if (!rectanguloFuera.contains(event.rawX.toInt(), event.rawY.toInt())) {
+                    viewActual.clearFocus()
+                    val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+                    imm.hideSoftInputFromWindow(viewActual.windowToken, 0)
+                }
+            }
+        }
+        return super.dispatchTouchEvent(event)
+    }
 
     // Gestiona qué pasa cuando el usuario pulsa la flecha de "Atrás" física o la del Header
     override fun onSupportNavigateUp(): Boolean {

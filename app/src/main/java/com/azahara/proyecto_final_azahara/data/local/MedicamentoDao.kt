@@ -45,4 +45,17 @@ interface MedicamentoDao {
 
     @Query("SELECT * FROM medicamentos")
     fun getAllMedicamentos(): Flow<List<Medicamento>>
+
+    @androidx.room.Query("DELETE FROM medicamentos")
+    suspend fun borrarTodosLosMedicamentos()
+
+    @androidx.room.Insert(onConflict = androidx.room.OnConflictStrategy.REPLACE)
+    suspend fun insertListaMedicamentos(medicamentos: List<Medicamento>)
+
+    // Una transacción asegura que si falla el guardado, no se borran los datos anteriores
+    @androidx.room.Transaction
+    suspend fun reemplazarTodosLosMedicamentos(medicamentos: List<Medicamento>) {
+        borrarTodosLosMedicamentos()
+        insertListaMedicamentos(medicamentos)
+    }
 }
