@@ -4,8 +4,10 @@
 
     <uses-permission android:name="android.permission.CAMERA" />
 
+
     <!--    Esto lo añadimos por si el dispositivo es muy antiguo  y no tiene cámara, -->
     <!--    así no da error y se podrá instalar la app-->
+
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
@@ -18,6 +20,8 @@
 
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.VIBRATE" />
+
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:allowBackup="true"
@@ -41,6 +45,15 @@
         </activity>
 
         <receiver android:name=".alarm.AlarmReceiver" android:exported="false" />
+
+        <receiver
+            android:name=".alarm.BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
 
         <activity
             android:name="com.journeyapps.barcodescanner.CaptureActivity"

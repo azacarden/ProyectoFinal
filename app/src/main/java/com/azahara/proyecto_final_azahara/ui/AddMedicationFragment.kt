@@ -15,8 +15,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
-import androidx.recyclerview.widget.RecyclerView
 import com.azahara.proyecto_final_azahara.R
+import com.azahara.proyecto_final_azahara.alarm.AlarmHelper // Importamos directamente
 import com.azahara.proyecto_final_azahara.data.local.AppDatabase
 import com.azahara.proyecto_final_azahara.data.network.RetrofitClient
 import com.azahara.proyecto_final_azahara.repository.CimaRepository
@@ -36,7 +36,6 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
     private val listaHoras = ArrayList<String>()
     private var idMedEditar: Int = -1
 
-    // Variables dinámicas para retener las URLs clínicas y guardarlas en Room
     private var urlProspectoGuardada: String? = null
     private var contraindicacionesGuardadas: String? = null
 
@@ -57,10 +56,8 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
         val etNombre = view.findViewById<EditText>(R.id.etNombre)
         val etMensaje = view.findViewById<EditText>(R.id.etMensaje)
         val btnGuardar = view.findViewById<Button>(R.id.btnGuardar)
-
         val btnAgregarHora = view.findViewById<Button>(R.id.btnAgregarHora)
         val tvHorasSeleccionadas = view.findViewById<TextView>(R.id.tvHorasSeleccionadas)
-
         val tvViasAdministracion = view.findViewById<TextView>(R.id.tvViasAdministracion)
         val tvContraindicaciones = view.findViewById<TextView>(R.id.tvContraindicaciones)
         val btnVerProspecto = view.findViewById<Button>(R.id.btnVerProspecto)
@@ -119,10 +116,8 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
             }
 
             if (idMedEditar == -1) {
-                // Pasamos los nuevos datos al guardar
                 viewModel.guardarMedicamentoLocal(nombre, horasTexto, mensaje, urlProspectoGuardada, contraindicacionesGuardadas)
             } else {
-                // Pasamos los nuevos datos al editar
                 viewModel.actualizarMedicamentoLocal(idMedEditar, nombre, horasTexto, mensaje, urlProspectoGuardada, contraindicacionesGuardadas)
             }
         }
@@ -151,8 +146,6 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
                         is CimaUiState.SuccessDetail -> {
                             progressBar.visibility = View.GONE
                             val detalle = state.detalle
-
-                            // Retenemos los enlaces clínicos en el fragmento
                             urlProspectoGuardada = detalle.urlProspecto
                             contraindicacionesGuardadas = detalle.contraindicaciones
 
@@ -181,11 +174,10 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
                             progressBar.visibility = View.GONE
                             Toast.makeText(requireContext(), "Medicamento guardado con éxito", Toast.LENGTH_SHORT).show()
 
-                            // -----------------------------------------------------
-                            // ¡EL DISPARADOR QUE FALTABA!
-                            // -----------------------------------------------------
+                            // ¡Aquí activamos la magia de la alarma!
                             viewModel.ultimoMedicamentoGuardado?.let { med ->
-                                com.azahara.proyecto_final_azahara.alarm.AlarmHelper(requireContext()).programarAlarma(med)
+                                val alarmHelper = AlarmHelper(requireContext())
+                                alarmHelper.programarAlarma(med)
                             }
 
                             findNavController().navigateUp()

@@ -58,4 +58,7 @@ interface MedicamentoDao {
         borrarTodosLosMedicamentos()
         insertListaMedicamentos(medicamentos)
     }
+
+    @androidx.room.Query("SELECT * FROM medicamentos")
+    suspend fun obtenerTodosLosMedicamentosSync(): List<Medicamento>
 }
