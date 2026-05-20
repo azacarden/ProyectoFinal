@@ -42,4 +42,7 @@ interface MedicamentoDao {
 
     @Delete
     suspend fun deleteMedicamento(medicamento: Medicamento)
+
+    @Query("SELECT * FROM medicamentos")
+    fun getAllMedicamentos(): Flow<List<Medicamento>>
 }

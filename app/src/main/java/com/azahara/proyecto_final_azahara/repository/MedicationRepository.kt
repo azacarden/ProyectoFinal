@@ -29,11 +29,14 @@ class MedicationRepository(
             // Guardar en la fuente de verdad local (Room)
             val idLocal = medicamentoDao.insertMedicamento(medicamento)
 
+            // Cortamos el texto por las comas y quitamos los espacios en blanco
+            val listaHorarios = medicamento.horaToma.split(",").map { it.trim() }
+
             // Crear el DTO para transferirlo a la red
             val dto = MedicamentoDTO(
                 idLocal = idLocal.toInt(),
                 nombre = medicamento.nombre,
-                horaToma = medicamento.horaToma,
+                horarios = listaHorarios,
                 mensajePersonalizado = medicamento.mensajePersonalizado
             )
 

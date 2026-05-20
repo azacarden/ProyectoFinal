@@ -15,6 +15,7 @@ class UserRepository(
 
     /**
      * Valida el login de forma 100% offline aplicando criptografía SHA-256.
+     * Además, implementa la Sincronización Diferida si el usuario no estaba en la nube.
      */
     suspend fun iniciarSesionLocal(nombre: String, contrasenaPlana: String): Result<Usuario> {
         return withContext(Dispatchers.IO) {
@@ -26,7 +27,30 @@ class UserRepository(
                 val usuarioEncontrado = usuarioDao.obtenerUsuarioPorNombre(nombre)
 
                 if (usuarioEncontrado != null && usuarioEncontrado.contrasenaHash == hashBuscado) {
-                    Result.success(usuarioEncontrado)
+
+                    var usuarioActualizado = usuarioEncontrado
+
+                    // 3. SINCRONIZACIÓN DIFERIDA: Si no tiene UID, se registró offline. Lo intentamos subir ahora.
+                    if (usuarioActualizado.firebaseUid == null) {
+                        try {
+                            val authResult = firebaseAuth.createUserWithEmailAndPassword(
+                                usuarioActualizado.correo,
+                                contrasenaPlana
+                            ).await()
+
+                            val firebaseUser = authResult.user
+                            if (firebaseUser != null) {
+                                usuarioActualizado = usuarioActualizado.copy(firebaseUid = firebaseUser.uid)
+                                usuarioDao.updateUsuario(usuarioActualizado)
+                            }
+                        } catch (e: Exception) {
+                            // Si vuelve a fallar (sigue sin internet), no bloqueamos el login.
+                            // El usuario entra localmente y lo volveremos a intentar en el próximo login.
+                            android.util.Log.e("UserRepository", "Sincronización diferida en login fallida: ${e.message}")
+                        }
+                    }
+
+                    Result.success(usuarioActualizado)
                 } else {
                     Result.failure(Exception("Usuario o contraseña incorrectos."))
                 }
@@ -53,9 +77,11 @@ class UserRepository(
                     rol = rol
                 )
 
+                // Guardamos en local (Fuente de Verdad)
                 val idGenerado = usuarioDao.insertUsuario(nuevoUsuario)
                 var usuarioGuardado = nuevoUsuario.copy(id = idGenerado.toInt())
 
+                // Intentamos sincronizar con la nube inmediatamente
                 try {
                     val authResult = firebaseAuth.createUserWithEmailAndPassword(correo, contrasenaPlana).await()
                     val firebaseUser = authResult.user

@@ -20,7 +20,7 @@ import com.azahara.proyecto_final_azahara.model.Usuario
         CitaMedica::class,
         AlarmaGeneral::class
     ],
-    version = 4, // <--- ACTUALIZADO: Incrementado para aplicar los cambios de esquema
+    version = 5, // <--- ACTUALIZADO: Incrementado para aplicar los cambios de esquema
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

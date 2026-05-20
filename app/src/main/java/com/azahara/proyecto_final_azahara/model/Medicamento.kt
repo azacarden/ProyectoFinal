@@ -9,6 +9,7 @@ data class Medicamento(
     val id: Int = 0,
     val nombre: String,
     val mensajePersonalizado: String,
+    val horaToma: String, // Esta es la propiedad que buscaba AlarmHelper
     val urlProspecto: String? = null,
     val contraindicaciones: String? = null
 )

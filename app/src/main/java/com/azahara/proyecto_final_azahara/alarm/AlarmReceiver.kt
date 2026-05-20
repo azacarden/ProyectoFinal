@@ -57,13 +57,14 @@ class AlarmReceiver : BroadcastReceiver() {
             mostrarNotificacion(context, "💊 ¡Toma de: $nombreMedicamento!", mensaje)
 
             // Guardamos en el Historial en segundo plano (solo para medicamentos)
+// Guardamos en el Historial en segundo plano (solo para medicamentos)
             val pendingResult = goAsync()
             CoroutineScope(Dispatchers.IO).launch {
                 try {
                     val db = AppDatabase.getDatabase(context)
                     val nuevoRegistro = Historial(
                         usuarioId = 1,
-                        medicamentoId = medicamentoId,
+                        horarioId = medicamentoId, // Enlazamos el ID capturado con la columna correspondiente de la BD
                         fechaHoraReal = System.currentTimeMillis(),
                         estado = "Notificada"
                     )
