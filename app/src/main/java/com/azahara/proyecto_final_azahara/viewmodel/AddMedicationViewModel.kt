@@ -61,23 +61,22 @@ class AddMedicationViewModel(
         }
     }
 
-    // MODO CREAR: Guarda en Room y retiene el ID generado para la alarma
-    fun guardarMedicamentoLocal(nombre: String, hora: String, mensaje: String, urlProspecto: String?, contraindicaciones: String?) {
+    // MODO CREAR
+    // MODO CREAR
+    fun guardarMedicamentoLocal(nombre: String, hora: String, mensaje: String, frecuencia: String, diaEspecifico: String?, urlProspecto: String?, contraindicaciones: String?) {
         viewModelScope.launch {
             try {
                 val nuevoMedicamento = Medicamento(
                     nombre = nombre,
                     horaToma = hora,
                     mensajePersonalizado = mensaje,
+                    frecuencia = frecuencia,
+                    diaEspecifico = diaEspecifico, // ¡NUEVO!
                     urlProspecto = urlProspecto,
                     contraindicaciones = contraindicaciones
                 )
-                // Room nos devuelve el ID único en formato Long al insertar
                 val idGenerado = medicamentoDao.insertMedicamento(nuevoMedicamento)
-
-                // Guardamos una copia exacta con su ID real para que el Fragment encienda la alarma
                 ultimoMedicamentoGuardado = nuevoMedicamento.copy(id = idGenerado.toInt())
-
                 _uiState.value = CimaUiState.SaveSuccess
             } catch (e: Exception) {
                 _uiState.value = CimaUiState.Error("Error al guardar localmente")
@@ -85,23 +84,22 @@ class AddMedicationViewModel(
         }
     }
 
-    // MODO EDITAR: Actualiza los datos de una pastilla existente
-    fun actualizarMedicamentoLocal(id: Int, nombre: String, hora: String, mensaje: String, urlProspecto: String?, contraindicaciones: String?) {
+    // MODO EDITAR
+    fun actualizarMedicamentoLocal(id: Int, nombre: String, hora: String, mensaje: String, frecuencia: String, diaEspecifico: String?, urlProspecto: String?, contraindicaciones: String?) {
         viewModelScope.launch {
             try {
                 val medModificado = Medicamento(
-                    id = id, // Al pasar el mismo ID, Room sabe que debe sobrescribir
+                    id = id,
                     nombre = nombre,
                     horaToma = hora,
                     mensajePersonalizado = mensaje,
+                    frecuencia = frecuencia,
+                    diaEspecifico = diaEspecifico, // ¡NUEVO!
                     urlProspecto = urlProspecto,
                     contraindicaciones = contraindicaciones
                 )
                 medicamentoDao.updateMedicamento(medModificado)
-
-                // Guardamos el objeto modificado para actualizar su alarma en el sistema
                 ultimoMedicamentoGuardado = medModificado
-
                 _uiState.value = CimaUiState.SaveSuccess
             } catch (e: Exception) {
                 _uiState.value = CimaUiState.Error("Error al actualizar medicamento")

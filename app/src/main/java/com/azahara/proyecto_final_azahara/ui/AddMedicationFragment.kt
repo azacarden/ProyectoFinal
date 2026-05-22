@@ -5,9 +5,13 @@ import android.net.Uri
 import android.os.Bundle
 import android.text.Html
 import android.view.View
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ProgressBar
+import android.widget.RadioButton
+import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
@@ -16,7 +20,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.azahara.proyecto_final_azahara.R
-import com.azahara.proyecto_final_azahara.alarm.AlarmHelper // Importamos directamente
+import com.azahara.proyecto_final_azahara.alarm.AlarmHelper
 import com.azahara.proyecto_final_azahara.data.local.AppDatabase
 import com.azahara.proyecto_final_azahara.data.network.RetrofitClient
 import com.azahara.proyecto_final_azahara.repository.CimaRepository
@@ -62,6 +66,45 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
         val tvContraindicaciones = view.findViewById<TextView>(R.id.tvContraindicaciones)
         val btnVerProspecto = view.findViewById<Button>(R.id.btnVerProspecto)
 
+        // Referencias a la frecuencia y nuevos desplegables
+        val rgFrecuencia = view.findViewById<RadioGroup>(R.id.rgFrecuencia)
+        val rbSemanal = view.findViewById<RadioButton>(R.id.rbSemanal)
+        val rbMensual = view.findViewById<RadioButton>(R.id.rbMensual)
+        val rbDiaria = view.findViewById<RadioButton>(R.id.rbDiaria)
+
+        val llOpcionesFrecuencia = view.findViewById<View>(R.id.llOpcionesFrecuencia)
+        val tilDiaSemana = view.findViewById<View>(R.id.tilDiaSemana)
+        val tilDiaMes = view.findViewById<View>(R.id.tilDiaMes)
+        val actvDiaSemana = view.findViewById<AutoCompleteTextView>(R.id.actvDiaSemana)
+        val actvDiaMes = view.findViewById<AutoCompleteTextView>(R.id.actvDiaMes)
+
+        // Llenamos los desplegables con opciones
+        val diasSemana = arrayOf("Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo")
+        val diasMes = (1..31).map { it.toString() }.toTypedArray()
+
+        actvDiaSemana.setAdapter(ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, diasSemana))
+        actvDiaMes.setAdapter(ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, diasMes))
+
+        // LÓGICA VISUAL: Mostrar y ocultar según el botón de frecuencia pulsado
+        rgFrecuencia.setOnCheckedChangeListener { _, checkedId ->
+            when (checkedId) {
+                R.id.rbDiaria -> {
+                    llOpcionesFrecuencia.visibility = View.GONE
+                }
+                R.id.rbSemanal -> {
+                    llOpcionesFrecuencia.visibility = View.VISIBLE
+                    tilDiaSemana.visibility = View.VISIBLE
+                    tilDiaMes.visibility = View.GONE
+                }
+                R.id.rbMensual -> {
+                    llOpcionesFrecuencia.visibility = View.VISIBLE
+                    tilDiaSemana.visibility = View.GONE
+                    tilDiaMes.visibility = View.VISIBLE
+                }
+            }
+        }
+
+        // MODO EDICIÓN
         if (idMedEditar != -1) {
             tvTituloPantalla.text = "Modificar Medicamento"
             btnGuardar.text = "Guardar Cambios"
@@ -74,6 +117,21 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
                     etMensaje.setText(it.mensajePersonalizado)
                     urlProspectoGuardada = it.urlProspecto
                     contraindicacionesGuardadas = it.contraindicaciones
+
+                    // Marcamos el botón correcto al editar y revelamos el menú si procede
+                    when (it.frecuencia) {
+                        "Semanal" -> {
+                            rbSemanal.isChecked = true
+                            actvDiaSemana.setText(it.diaEspecifico, false) // false evita que se abra el menú solo
+                        }
+                        "Mensual" -> {
+                            rbMensual.isChecked = true
+                            actvDiaMes.setText(it.diaEspecifico, false)
+                        }
+                        else -> {
+                            rbDiaria.isChecked = true
+                        }
+                    }
 
                     if (it.horaToma.isNotBlank()) {
                         listaHoras.addAll(it.horaToma.split(", "))
@@ -110,15 +168,38 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
             val mensaje = etMensaje.text.toString().trim()
             val horasTexto = listaHoras.joinToString(", ")
 
+            // Determinamos qué botón pulsó el usuario
+            val frecuenciaSeleccionada = when (rgFrecuencia.checkedRadioButtonId) {
+                R.id.rbSemanal -> "Semanal"
+                R.id.rbMensual -> "Mensual"
+                else -> "Diaria"
+            }
+
+            // Capturamos el día específico si no es diario
+            var diaEspecificoGuardado: String? = null
+            if (frecuenciaSeleccionada == "Semanal") {
+                diaEspecificoGuardado = actvDiaSemana.text.toString()
+                if (diaEspecificoGuardado.isBlank()) {
+                    Toast.makeText(requireContext(), "Por favor, elige el día de la semana", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+            } else if (frecuenciaSeleccionada == "Mensual") {
+                diaEspecificoGuardado = actvDiaMes.text.toString()
+                if (diaEspecificoGuardado.isBlank()) {
+                    Toast.makeText(requireContext(), "Por favor, elige el día del mes", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+            }
+
             if (nombre.isBlank() || horasTexto.isBlank()) {
                 Toast.makeText(requireContext(), "El nombre y al menos una hora son obligatorios", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
             if (idMedEditar == -1) {
-                viewModel.guardarMedicamentoLocal(nombre, horasTexto, mensaje, urlProspectoGuardada, contraindicacionesGuardadas)
+                viewModel.guardarMedicamentoLocal(nombre, horasTexto, mensaje, frecuenciaSeleccionada, diaEspecificoGuardado, urlProspectoGuardada, contraindicacionesGuardadas)
             } else {
-                viewModel.actualizarMedicamentoLocal(idMedEditar, nombre, horasTexto, mensaje, urlProspectoGuardada, contraindicacionesGuardadas)
+                viewModel.actualizarMedicamentoLocal(idMedEditar, nombre, horasTexto, mensaje, frecuenciaSeleccionada, diaEspecificoGuardado, urlProspectoGuardada, contraindicacionesGuardadas)
             }
         }
 
@@ -139,8 +220,6 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
                                         etNombre.setText(seleccion.nombre)
                                         viewModel.cargarDetalle(seleccion)
                                     }.show()
-                            } else {
-                                Toast.makeText(requireContext(), "No se han encontrado medicamentos", Toast.LENGTH_SHORT).show()
                             }
                         }
                         is CimaUiState.SuccessDetail -> {
@@ -174,12 +253,10 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
                             progressBar.visibility = View.GONE
                             Toast.makeText(requireContext(), "Medicamento guardado con éxito", Toast.LENGTH_SHORT).show()
 
-                            // ¡Aquí activamos la magia de la alarma!
                             viewModel.ultimoMedicamentoGuardado?.let { med ->
                                 val alarmHelper = AlarmHelper(requireContext())
                                 alarmHelper.programarAlarma(med)
                             }
-
                             findNavController().navigateUp()
                         }
                     }

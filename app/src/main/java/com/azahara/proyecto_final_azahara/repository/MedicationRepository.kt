@@ -29,6 +29,7 @@ class MedicationRepository(
                 idLocal = idLocal.toInt(),
                 nombre = medicamento.nombre,
                 horarios = listaHorarios,
+                frecuencia = medicamento.frecuencia, // ¡Añadido!
                 mensajePersonalizado = medicamento.mensajePersonalizado
             )
 
@@ -64,10 +65,12 @@ class MedicationRepository(
                             id = dto.idLocal,
                             nombre = dto.nombre,
                             horaToma = dto.horarios.joinToString(", "),
+                            frecuencia = dto.frecuencia,
                             mensajePersonalizado = dto.mensajePersonalizado,
                             urlProspecto = dto.urlProspecto,
                             contraindicaciones = dto.contraindicaciones
                         )
+
                     }
 
                     // 2. Transacción Local: Hacemos que Room sea un espejo exacto de Firestore

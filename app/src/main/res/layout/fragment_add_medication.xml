@@ -96,6 +96,89 @@
             android:visibility="gone"
             app:layout_constraintTop_toBottomOf="@id/tvContraindicaciones" />
 
+        <TextView
+            android:id="@+id/tvFrecuencia"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="¿Cada cuánto lo tomas?"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorPrimary"
+            app:layout_constraintTop_toBottomOf="@id/btnVerProspecto" />
+
+        <RadioGroup
+            android:id="@+id/rgFrecuencia"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp"
+            app:layout_constraintTop_toBottomOf="@id/tvFrecuencia">
+
+            <RadioButton
+                android:id="@+id/rbDiaria"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="A diario"
+                android:textSize="16sp"
+                android:checked="true" />
+
+            <RadioButton
+                android:id="@+id/rbSemanal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Semanal"
+                android:textSize="16sp"
+                android:layout_marginStart="16dp" />
+
+            <RadioButton
+                android:id="@+id/rbMensual"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Mensual"
+                android:textSize="16sp"
+                android:layout_marginStart="16dp" />
+        </RadioGroup>
+
+        <LinearLayout
+            android:id="@+id/llOpcionesFrecuencia"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            app:layout_constraintTop_toBottomOf="@id/rgFrecuencia">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilDiaSemana"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:hint="Elige el día de la semana"
+                android:visibility="gone">
+                <AutoCompleteTextView
+                    android:id="@+id/actvDiaSemana"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilDiaMes"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:hint="Elige el día del mes"
+                android:visibility="gone">
+                <AutoCompleteTextView
+                    android:id="@+id/actvDiaMes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none" />
+            </com.google.android.material.textfield.TextInputLayout>
+        </LinearLayout>
+
         <LinearLayout
             android:id="@+id/llSeccionHoras"
             android:layout_width="match_parent"
@@ -104,7 +187,7 @@
             android:layout_marginTop="24dp"
             android:padding="12dp"
             android:background="#E8F0FE"
-            app:layout_constraintTop_toBottomOf="@id/btnVerProspecto">
+            app:layout_constraintTop_toBottomOf="@id/llOpcionesFrecuencia">
 
             <Button
                 android:id="@+id/btnAgregarHora"
