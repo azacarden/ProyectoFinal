@@ -1,5 +1,6 @@
 package com.azahara.proyecto_final_azahara.ui
 
+import android.content.Context
 import android.os.Bundle
 import android.view.View
 import android.widget.TextView
@@ -14,40 +15,33 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // 1. Recuperamos de forma segura el nombre del usuario identificado
-        val prefs = requireContext().getSharedPreferences("SesionUsuario", android.content.Context.MODE_PRIVATE)
-        val miUsuario = prefs.getString("usuario_identificado", "Usuario") ?: "Usuario"
+        // 1. Accedemos a la memoria local donde guardamos al usuario al hacer login/registro
+        val prefs = requireContext().getSharedPreferences("SesionUsuario", Context.MODE_PRIVATE)
+        val nombreUsuario = prefs.getString("usuario_identificado", "Usuario") ?: "Usuario"
 
-        // 2. Buscamos el TextView y aplicamos tu nuevo formato personalizado con salto de línea
+        // 2. Localizamos el TextView y aplicamos el nuevo formato de saludo
         val tvSaludo = view.findViewById<TextView>(R.id.tvSaludoDashboard)
-        tvSaludo.text = "¡Hola, $miUsuario!\n¿Qué quieres hacer hoy?"
+        tvSaludo.text = "¡Hola, $nombreUsuario!\n¿Qué quieres hacer hoy?"
 
-        // Botón 1: Mis Pastillas (Ahora es el Banner Principal)
+        // 3. Configuración de navegación de los 5 botones
         view.findViewById<MaterialCardView>(R.id.cardMedicacion).setOnClickListener {
             findNavController().navigate(R.id.action_dashboard_to_medicationList)
         }
 
-        // Botón 2: Nueva Toma
         view.findViewById<MaterialCardView>(R.id.cardAdd).setOnClickListener {
             findNavController().navigate(R.id.action_dashboard_to_addMedication)
         }
 
-        // Botón 3: Historial
         view.findViewById<MaterialCardView>(R.id.cardHistorial).setOnClickListener {
-            Toast.makeText(requireContext(), "Navegando a Historial", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Funcionalidad en desarrollo", Toast.LENGTH_SHORT).show()
         }
 
-        // Botón 4: Citas Médicas y Alarmas
         view.findViewById<MaterialCardView>(R.id.cardAlarmas).setOnClickListener {
             findNavController().navigate(R.id.action_dashboard_to_appointmentList)
         }
 
-        // Botón 5: Cuidadores / Perfil QR
         view.findViewById<MaterialCardView>(R.id.cardCuidadores).setOnClickListener {
-            val bundle = Bundle().apply {
-                putString("NOMBRE_USUARIO_LOGUEADO", miUsuario)
-            }
-            findNavController().navigate(R.id.action_dashboard_to_profile, bundle)
+            findNavController().navigate(R.id.action_dashboard_to_profile)
         }
     }
 }
