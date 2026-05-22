@@ -7,6 +7,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.azahara.proyecto_final_azahara.data.local.AppDatabase
 import com.azahara.proyecto_final_azahara.model.Historial
@@ -17,63 +18,74 @@ import kotlinx.coroutines.launch
 class AlarmReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
-        // Primero preguntamos: ¿Qué tipo de alarma eres? Si no tiene etiqueta, suponemos que es de medicación.
         val tipoAlarma = intent.getStringExtra("TIPO_ALARMA") ?: "MEDICAMENTO"
-        android.util.Log.d("ALARMAS_AZAHARA", "¡EL RECEIVER HA SIDO LLAMADO!")
-        android.widget.Toast.makeText(context, "¡ALARMA DISPARADA!", android.widget.Toast.LENGTH_LONG).show()
+        Log.d("ALARMAS_AZAHARA", "¡Receiver disparado en background para: $tipoAlarma!")
 
-        if (tipoAlarma == "CITA") {
-            // -----------------------------------------------------
-            // 1. ES UNA ALARMA DE CITA MÉDICA
-            // -----------------------------------------------------
-            val tituloCita = intent.getStringExtra("CITA_TITULO") ?: "Cita Médica"
-            val especialista = intent.getStringExtra("CITA_ESPECIALISTA") ?: ""
-            val notas = intent.getStringExtra("CITA_NOTAS") ?: ""
+        // 1. goAsync() es el "Background Service" moderno.
+        // Le dice a Android: "Mantén el proceso vivo, voy a trabajar en un hilo secundario".
+        val pendingResult = goAsync()
 
-            val mensajeCompleto = "Especialista: $especialista\nNotas: $notas"
-
-            // Usamos la misma función visual, pero adaptada a las citas
-            mostrarNotificacion(context, "📅 Próxima cita: $tituloCita", mensajeCompleto)
-
-        } else if (tipoAlarma == "GENERAL") {
-            // -----------------------------------------------------
-            // 2. ¡NUEVO! ES UNA ALARMA GENERAL (Recordatorios)
-            // -----------------------------------------------------
-            val titulo = intent.getStringExtra("ALARMA_TITULO") ?: "Aviso"
-            val notas = intent.getStringExtra("ALARMA_NOTAS") ?: ""
-
-            // Reutilizamos la función visual para mostrar el recordatorio
-            mostrarNotificacion(context, "🔔 Aviso: $titulo", notas)
-
-        } else {
-            // -----------------------------------------------------
-            // 3. ES UNA ALARMA DE PASTILLA (El código original)
-            // -----------------------------------------------------
-            val medicamentoId = intent.getIntExtra("MED_ID", 0)
-            val nombreMedicamento = intent.getStringExtra("MED_NOMBRE") ?: "Medicamento"
-            val mensaje = intent.getStringExtra("MED_MENSAJE") ?: "Es hora de tu toma."
-
-            // Al título de la medicación le ponemos la pastillita para que destaque
-            mostrarNotificacion(context, "💊 ¡Toma de: $nombreMedicamento!", mensaje)
-
-            // Guardamos en el Historial en segundo plano (solo para medicamentos)
-// Guardamos en el Historial en segundo plano (solo para medicamentos)
-            val pendingResult = goAsync()
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    val db = AppDatabase.getDatabase(context)
-                    val nuevoRegistro = Historial(
-                        usuarioId = 1,
-                        horarioId = medicamentoId, // Enlazamos el ID capturado con la columna correspondiente de la BD
-                        fechaHoraReal = System.currentTimeMillis(),
-                        estado = "Notificada"
-                    )
-                    db.historialDao().insertHistorial(nuevoRegistro)
-                } finally {
-                    pendingResult.finish()
+        // 2. Pasamos TODA la ejecución al hilo secundario de Entrada/Salida (IO)
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                // El hilo principal (UI) ya está libre. Operamos en background.
+                when (tipoAlarma) {
+                    "CITA" -> procesarAlarmaCita(context, intent)
+                    "GENERAL" -> procesarAlarmaGeneral(context, intent)
+                    "MEDICAMENTO" -> procesarAlarmaMedicamento(context, intent)
                 }
+            } catch (e: Exception) {
+                Log.e("ALARMAS_AZAHARA", "Error crítico en background: ${e.message}")
+            } finally {
+                // 3. OBLIGATORIO: Avisamos a Android que hemos terminado y puede liberar memoria
+                pendingResult.finish()
             }
         }
+    }
+
+    // Funciones suspendidas: Solo pueden ser llamadas desde una Corrutina (hilo secundario)
+
+    private suspend fun procesarAlarmaCita(context: Context, intent: Intent) {
+        val tituloCita = intent.getStringExtra("CITA_TITULO") ?: "Cita Médica"
+        val especialista = intent.getStringExtra("CITA_ESPECIALISTA") ?: ""
+        val notas = intent.getStringExtra("CITA_NOTAS") ?: ""
+
+        val mensajeCompleto = "Especialista: $especialista\nNotas: $notas"
+
+        mostrarNotificacion(context, "📅 Próxima cita: $tituloCita", mensajeCompleto)
+    }
+
+    private suspend fun procesarAlarmaGeneral(context: Context, intent: Intent) {
+        val titulo = intent.getStringExtra("ALARMA_TITULO") ?: "Aviso"
+        val notas = intent.getStringExtra("ALARMA_NOTAS") ?: ""
+
+        mostrarNotificacion(context, "🔔 Aviso: $titulo", notas)
+    }
+
+    private suspend fun procesarAlarmaMedicamento(context: Context, intent: Intent) {
+        val horarioId = intent.getIntExtra("MED_ID", 0)
+        val nombreMedicamento = intent.getStringExtra("MED_NOMBRE") ?: "Medicamento"
+        val mensaje = intent.getStringExtra("MED_MENSAJE") ?: "Es hora de tu toma."
+
+        // 1. Mostramos la interfaz al usuario
+        mostrarNotificacion(context, "💊 ¡Toma de: $nombreMedicamento!", mensaje)
+
+        // 2. Operación pesada de Base de Datos en Background puro
+        val db = AppDatabase.getDatabase(context)
+
+        // Recuperamos al usuario activo de las SharedPreferences (Opcional pero recomendado)
+        val prefs = context.getSharedPreferences("SesionUsuario", Context.MODE_PRIVATE)
+        val idUsuarioActivo = prefs.getInt("usuario_id_bd", 1) // 1 por defecto
+
+        val nuevoRegistro = Historial(
+            usuarioId = idUsuarioActivo,
+            horarioId = horarioId,
+            fechaHoraReal = System.currentTimeMillis(),
+            estado = "Notificada"
+        )
+
+        db.historialDao().insertHistorial(nuevoRegistro)
+        Log.d("ALARMAS_AZAHARA", "Historial guardado en background con éxito.")
     }
 
     @SuppressLint("MissingPermission")

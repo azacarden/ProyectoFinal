@@ -40,7 +40,9 @@ class AddMedicationViewModel(
                 val resultados = repository.buscarPorNombre(query)
                 _uiState.value = CimaUiState.SuccessList(resultados)
             } catch (e: Exception) {
-                _uiState.value = CimaUiState.Error("Error al conectar con CIMA")
+                // Ahora enviaremos a la pantalla el motivo EXACTO por el que ha fallado
+                android.util.Log.e("CIMA_DEBUG", "Fallo real: ", e)
+                _uiState.value = CimaUiState.Error("Fallo real: ${e.message}")
             }
         }
     }
@@ -53,6 +55,7 @@ class AddMedicationViewModel(
                 val detalle = repository.obtenerDetalleCompleto(medicamento)
                 _uiState.value = CimaUiState.SuccessDetail(detalle)
             } catch (e: Exception) {
+                android.util.Log.e("CIMA_DEBUG", "Fallo real: ", e)
                 _uiState.value = CimaUiState.Error("Fallo CIMA: ${e.message}")
             }
         }
