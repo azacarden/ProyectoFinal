@@ -4,14 +4,14 @@ import android.os.Bundle
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
+import android.view.Menu // Importante para inflar el menú
+import android.view.MenuItem // Importante para capturar los clics
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
-import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.setupActionBarWithNavController
 import com.google.android.material.appbar.MaterialToolbar
 
 class MainActivity : AppCompatActivity() {
@@ -23,10 +23,8 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         // ANDROID 13+ (Permisos de Notificación)
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                // Si no tenemos el permiso, lanzamos la ventanita emergente para pedirlo
                 ActivityCompat.requestPermissions(
                     this,
                     arrayOf(Manifest.permission.POST_NOTIFICATIONS),
@@ -47,7 +45,7 @@ class MainActivity : AppCompatActivity() {
         // 3. REQUISITO TÉCNICO: Lógica de visibilidad y flecha de retroceso
         navController.addOnDestinationChangedListener { _, destination, _ ->
             when (destination.id) {
-                R.id.loginFragment -> {
+                R.id.loginFragment, R.id.registroFragment -> {
                     toolbar.visibility = View.GONE
                 }
                 R.id.dashboardFragment -> {
@@ -61,10 +59,37 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
     /**
-     * Este metodo intercepta todos los toques en la pantalla.
-     * Si detecta que tocaste fuera de un campo de texto, esconde el teclado.
+     * 🛠️ CORRECCIÓN PASO 1: Le decimos a la Activity que infle el menú en el Header
      */
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.top_app_bar_menu, menu)
+        return true
+    }
+
+    /**
+     * 🛠️ CORRECCIÓN PASO 2: Capturamos los clics de Perfil y Ajustes usando el ciclo oficial
+     * (Asegúrate de que los IDs coincidan exactamente con tu top_app_bar_menu.xml)
+     */
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_perfil_menu -> {
+                if (navController.currentDestination?.id != R.id.profileFragment) {
+                    navController.navigate(R.id.profileFragment)
+                }
+                true
+            }
+            R.id.action_ajustes_menu -> {
+                if (navController.currentDestination?.id != R.id.settingsFragment) {
+                    navController.navigate(R.id.settingsFragment)
+                }
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
     override fun dispatchTouchEvent(event: android.view.MotionEvent): Boolean {
         if (event.action == android.view.MotionEvent.ACTION_DOWN) {
             val viewActual = currentFocus
@@ -72,7 +97,6 @@ class MainActivity : AppCompatActivity() {
                 val rectanguloFuera = android.graphics.Rect()
                 viewActual.getGlobalVisibleRect(rectanguloFuera)
 
-                // Si el toque fue fuera de los límites del campo de texto
                 if (!rectanguloFuera.contains(event.rawX.toInt(), event.rawY.toInt())) {
                     viewActual.clearFocus()
                     val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
@@ -83,7 +107,6 @@ class MainActivity : AppCompatActivity() {
         return super.dispatchTouchEvent(event)
     }
 
-    // Gestiona qué pasa cuando el usuario pulsa la flecha de "Atrás" física o la del Header
     override fun onSupportNavigateUp(): Boolean {
         return navController.navigateUp() || super.onSupportNavigateUp()
     }

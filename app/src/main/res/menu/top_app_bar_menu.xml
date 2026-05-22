@@ -3,9 +3,15 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
-        android:id="@+id/action_perfil"
+        android:id="@+id/action_perfil_menu"
         android:title="Perfil"
-        android:icon="@android:drawable/ic_menu_manage"
+        android:icon="@android:drawable/ic_menu_myplaces"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_ajustes_menu"
+        android:title="Ajustes"
+        android:icon="@android:drawable/ic_menu_preferences"
         app:showAsAction="ifRoom" />
 
 </menu>

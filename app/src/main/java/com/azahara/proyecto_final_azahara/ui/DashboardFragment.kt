@@ -13,7 +13,7 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Botón 1: Mis Pastillas
+        // Botón 1: Mis Pastillas (Ahora es el Banner Principal)
         view.findViewById<MaterialCardView>(R.id.cardMedicacion).setOnClickListener {
             findNavController().navigate(R.id.action_dashboard_to_medicationList)
         }
@@ -33,18 +33,13 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
             findNavController().navigate(R.id.action_dashboard_to_appointmentList)
         }
 
-        // Botón 5: Cuidadores / Perfil QR (¡Esta acción ya coincide perfectamente con el nav_graph!)
+        // Botón 5: Cuidadores / Perfil QR
         view.findViewById<MaterialCardView>(R.id.cardCuidadores).setOnClickListener {
             val bundle = Bundle().apply {
-                // Pasamos el nombre del usuario (puedes recuperar el que inició sesión)
+                // Pasamos el nombre del usuario logueado
                 putString("NOMBRE_USUARIO_LOGUEADO", "Azahara")
             }
             findNavController().navigate(R.id.action_dashboard_to_profile, bundle)
-        }
-
-        // Botón 6: Mi Perfil / Ajustes
-        view.findViewById<MaterialCardView>(R.id.cardPerfil).setOnClickListener {
-            findNavController().navigate(R.id.action_dashboard_to_settings)
         }
     }
 }
