@@ -33,6 +33,17 @@ class MedicationListFragment : Fragment(R.layout.fragment_medication_list) {
         val repository = MedicationRepository(dao, FirebaseFirestore.getInstance())
         viewModel = MedicationViewModel(repository)
 
+        // ¡NUEVO! Lógica de Cuidador: Si venimos de pulsar un paciente, descargamos SUS datos a nuestra base local
+        val pacienteUid = arguments?.getString("PACIENTE_UID")
+        if (pacienteUid != null) {
+            Toast.makeText(requireContext(), "Sincronizando pastillas de $pacienteUid...", Toast.LENGTH_SHORT).show()
+            viewLifecycleOwner.lifecycleScope.launch {
+                repository.escucharMedicacionPaciente(pacienteUid).collect {
+                    // Room se actualiza solo en background, y el Flow normal de abajo pintará las pastillas solas
+                }
+            }
+        }
+
         val rvMedicamentos = view.findViewById<RecyclerView>(R.id.rvMedicamentos)
 
         adapter = MedicationAdapter(

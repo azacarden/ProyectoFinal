@@ -2,42 +2,85 @@ package com.azahara.proyecto_final_azahara.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.azahara.proyecto_final_azahara.repository.UserRepository
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
-/**
- * ViewModel para la Autenticación (Login y Registro).
- */
-class AuthViewModel(private val userRepository: UserRepository) : ViewModel() {
+sealed class AuthState {
+    object Idle : AuthState()
+    object Loading : AuthState()
+    data class Success(val nombreUsuario: String, val rol: String) : AuthState()
+    data class Error(val message: String) : AuthState()
+}
 
-    private val _estadoLogin = MutableStateFlow("Esperando credenciales...")
-    val estadoLogin: StateFlow<String> = _estadoLogin.asStateFlow()
+class AuthViewModel : ViewModel() {
 
-    fun iniciarSesion(nombreUsuario: String, contrasena: String) {
-        // Validaciones en el cliente para evitar consultas innecesarias a la base de datos
-        if (nombreUsuario.isBlank() || contrasena.isBlank()) {
-            _estadoLogin.value = "Error: El usuario y la contraseña son obligatorios."
-            return
-        }
+    private val auth = FirebaseAuth.getInstance()
+    private val db = FirebaseFirestore.getInstance()
 
-        _estadoLogin.value = "Comprobando datos de forma segura..."
+    private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
+    val authState: StateFlow<AuthState> = _authState
 
-        // Ejecución asíncrona sin bloquear la pantalla
+    fun registrarUsuario(usuario: String, correo: String, contrasena: String, rol: String) {
         viewModelScope.launch {
-            val resultado = userRepository.iniciarSesionLocal(nombreUsuario, contrasena)
-
-            // 3. Evaluamos el resultado de la operación
-            resultado.fold(
-                onSuccess = { usuario ->
-                    _estadoLogin.value = "¡Bienvenido, ${usuario.nombreUsuario}! (Rol: ${usuario.rol})"
-                },
-                onFailure = { excepcion ->
-                    _estadoLogin.value = "Acceso denegado: ${excepcion.message}"
+            _authState.value = AuthState.Loading
+            try {
+                val userCheck = db.collection("usuarios").whereEqualTo("nombreUsuario", usuario).get().await()
+                if (!userCheck.isEmpty) {
+                    _authState.value = AuthState.Error("Ese nombre de usuario ya está cogido")
+                    return@launch
                 }
-            )
+
+                val result = auth.createUserWithEmailAndPassword(correo, contrasena).await()
+                val uid = result.user?.uid ?: throw Exception("Error al crear usuario")
+
+                val perfil = hashMapOf(
+                    "nombreUsuario" to usuario,
+                    "correo" to correo,
+                    "rol" to rol,
+                    "fechaRegistro" to System.currentTimeMillis()
+                )
+                db.collection("usuarios").document(uid).set(perfil).await()
+
+                _authState.value = AuthState.Success(nombreUsuario = usuario, rol = rol)
+            } catch (e: Exception) {
+                _authState.value = AuthState.Error(e.localizedMessage ?: "Error en el registro")
+            }
         }
+    }
+
+    fun loginConUsuario(usuario: String, contrasena: String) {
+        viewModelScope.launch {
+            _authState.value = AuthState.Loading
+            try {
+                val querySnapshot = db.collection("usuarios")
+                    .whereEqualTo("nombreUsuario", usuario)
+                    .get()
+                    .await()
+
+                if (querySnapshot.isEmpty) {
+                    _authState.value = AuthState.Error("El usuario no existe")
+                    return@launch
+                }
+
+                val documento = querySnapshot.documents.first()
+                val correoReal = documento.getString("correo") ?: ""
+
+                val rolReal = documento.getString("rol") ?: "Paciente"
+
+                auth.signInWithEmailAndPassword(correoReal, contrasena).await()
+
+                _authState.value = AuthState.Success(nombreUsuario = usuario, rol = rolReal)
+            } catch (e: Exception) {
+                _authState.value = AuthState.Error("Usuario o contraseña incorrectos")
+            }
+        }
+    }
+
+    fun resetState() {
+        _authState.value = AuthState.Idle
     }
 }

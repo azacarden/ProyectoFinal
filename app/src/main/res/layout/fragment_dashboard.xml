@@ -12,9 +12,10 @@
         android:padding="24dp">
 
         <TextView
+            android:id="@+id/tvSaludoDashboard"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="¡Hola! ¿Qué quieres hacer hoy?"
+            android:text="¡Hola!\n¿Qué quieres hacer hoy?"
             android:textSize="24sp"
             android:textStyle="bold"
             android:textColor="?attr/colorPrimary"

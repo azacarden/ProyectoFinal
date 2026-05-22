@@ -2,6 +2,7 @@ package com.azahara.proyecto_final_azahara.ui
 
 import android.os.Bundle
 import android.view.View
+import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
@@ -12,6 +13,14 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // 1. Recuperamos de forma segura el nombre del usuario identificado
+        val prefs = requireContext().getSharedPreferences("SesionUsuario", android.content.Context.MODE_PRIVATE)
+        val miUsuario = prefs.getString("usuario_identificado", "Usuario") ?: "Usuario"
+
+        // 2. Buscamos el TextView y aplicamos tu nuevo formato personalizado con salto de línea
+        val tvSaludo = view.findViewById<TextView>(R.id.tvSaludoDashboard)
+        tvSaludo.text = "¡Hola, $miUsuario!\n¿Qué quieres hacer hoy?"
 
         // Botón 1: Mis Pastillas (Ahora es el Banner Principal)
         view.findViewById<MaterialCardView>(R.id.cardMedicacion).setOnClickListener {
@@ -36,8 +45,7 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         // Botón 5: Cuidadores / Perfil QR
         view.findViewById<MaterialCardView>(R.id.cardCuidadores).setOnClickListener {
             val bundle = Bundle().apply {
-                // Pasamos el nombre del usuario logueado
-                putString("NOMBRE_USUARIO_LOGUEADO", "Azahara")
+                putString("NOMBRE_USUARIO_LOGUEADO", miUsuario)
             }
             findNavController().navigate(R.id.action_dashboard_to_profile, bundle)
         }
