@@ -32,7 +32,6 @@ import java.util.Locale
 
 class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
 
-    // Inicialización correcta usando Factory para inyectar dependencias y preservar estado
     private val viewModel: AddMedicationViewModel by viewModels {
         object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -49,6 +48,11 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
     private var idMedEditar: Int = -1
     private var urlProspectoGuardada: String? = null
     private var contraindicacionesGuardadas: String? = null
+    private lateinit var llOpcionesFrecuencia: View
+    private lateinit var tilDiaSemana: View
+    private lateinit var tilDiaMes: View
+    private lateinit var actvDiaSemana: AutoCompleteTextView
+    private lateinit var actvDiaMes: AutoCompleteTextView
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -71,23 +75,25 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
         val rgFrecuencia = view.findViewById<RadioGroup>(R.id.rgFrecuencia)
         val rbSemanal = view.findViewById<RadioButton>(R.id.rbSemanal)
         val rbMensual = view.findViewById<RadioButton>(R.id.rbMensual)
-        val rbDiaria = view.findViewById<RadioButton>(R.id.rbDiaria)
 
-        val llOpcionesFrecuencia = view.findViewById<View>(R.id.llOpcionesFrecuencia)
-        val tilDiaSemana = view.findViewById<View>(R.id.tilDiaSemana)
-        val tilDiaMes = view.findViewById<View>(R.id.tilDiaMes)
-        val actvDiaSemana = view.findViewById<AutoCompleteTextView>(R.id.actvDiaSemana)
-        val actvDiaMes = view.findViewById<AutoCompleteTextView>(R.id.actvDiaMes)
+        llOpcionesFrecuencia = view.findViewById(R.id.llOpcionesFrecuencia)
+        tilDiaSemana = view.findViewById(R.id.tilDiaSemana)
+        tilDiaMes = view.findViewById(R.id.tilDiaMes)
+        actvDiaSemana = view.findViewById(R.id.actvDiaSemana)
+        actvDiaMes = view.findViewById(R.id.actvDiaMes)
 
+        // Configuración de desplegables
         val diasSemana = arrayOf("Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo")
         val diasMes = (1..31).map { it.toString() }.toTypedArray()
-
         actvDiaSemana.setAdapter(ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, diasSemana))
         actvDiaMes.setAdapter(ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, diasMes))
 
-        rgFrecuencia.setOnCheckedChangeListener { _, checkedId ->
+        // --- FUNCIÓN DE VISIBILIDAD (Corregida) ---
+        fun actualizarVisibilidadFrecuencia(checkedId: Int) {
             when (checkedId) {
-                R.id.rbDiaria -> llOpcionesFrecuencia.visibility = View.GONE
+                R.id.rbDiaria -> {
+                    llOpcionesFrecuencia.visibility = View.GONE
+                }
                 R.id.rbSemanal -> {
                     llOpcionesFrecuencia.visibility = View.VISIBLE
                     tilDiaSemana.visibility = View.VISIBLE
@@ -101,6 +107,11 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
             }
         }
 
+        rgFrecuencia.setOnCheckedChangeListener { _, checkedId ->
+            actualizarVisibilidadFrecuencia(checkedId)
+        }
+
+        // Modo Edición
         if (idMedEditar != -1) {
             tvTituloPantalla.text = "Modificar Medicamento"
             btnGuardar.text = "Guardar Cambios"
@@ -113,11 +124,14 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
                     etMensaje.setText(it.mensajePersonalizado)
                     urlProspectoGuardada = it.urlProspecto
                     contraindicacionesGuardadas = it.contraindicaciones
-                    when (it.frecuencia) {
-                        "Semanal" -> { rbSemanal.isChecked = true; actvDiaSemana.setText(it.diaEspecifico, false) }
-                        "Mensual" -> { rbMensual.isChecked = true; actvDiaMes.setText(it.diaEspecifico, false) }
-                        else -> rbDiaria.isChecked = true
+
+                    val idRadioButton = when (it.frecuencia) {
+                        "Semanal" -> { actvDiaSemana.setText(it.diaEspecifico, false); R.id.rbSemanal }
+                        "Mensual" -> { actvDiaMes.setText(it.diaEspecifico, false); R.id.rbMensual }
+                        else -> R.id.rbDiaria
                     }
+                    rgFrecuencia.check(idRadioButton) // Esto marca el radio y actualiza la visibilidad
+
                     if (it.horaToma.isNotBlank()) {
                         listaHoras.addAll(it.horaToma.split(", "))
                         tvHorasSeleccionadas.text = "Horas seleccionadas: ${it.horaToma}"
@@ -127,7 +141,11 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
         }
 
         btnAgregarHora.setOnClickListener {
-            val timePicker = MaterialTimePicker.Builder().setTimeFormat(TimeFormat.CLOCK_24H).setTitleText("Añadir hora de toma").build()
+            val timePicker = MaterialTimePicker.Builder()
+                .setTimeFormat(TimeFormat.CLOCK_24H)
+                .setTitleText("Añadir hora de toma")
+                .build()
+
             timePicker.addOnPositiveButtonClickListener {
                 val horaFormateada = String.format(Locale.getDefault(), "%02d:%02d", timePicker.hour, timePicker.minute)
                 if (!listaHoras.contains(horaFormateada)) {
@@ -147,17 +165,61 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
         btnGuardar.setOnClickListener {
             val nombre = etNombre.text.toString().trim()
             val mensaje = etMensaje.text.toString().trim()
-            val horasTexto = listaHoras.joinToString(", ")
-            val frecuencia = when (rgFrecuencia.checkedRadioButtonId) {
-                R.id.rbSemanal -> "Semanal"
-                R.id.rbMensual -> "Mensual"
-                else -> "Diaria"
-            }
-            val diaEspecifico = if (frecuencia == "Semanal") actvDiaSemana.text.toString() else if (frecuencia == "Mensual") actvDiaMes.text.toString() else null
 
-            viewModel.validarYGuardar(nombre, horasTexto, mensaje, frecuencia, diaEspecifico, urlProspectoGuardada, contraindicacionesGuardadas, idMedEditar)
+            // VALIDACIÓN: No dejar guardar si no hay horas
+            if (listaHoras.isEmpty()) {
+                Toast.makeText(requireContext(), "Por favor, añade al menos una hora de toma", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val horas = listaHoras.joinToString(", ")
+            val freq = if (rbSemanal.isChecked) "Semanal" else if (rbMensual.isChecked) "Mensual" else "Diaria"
+            val dia = if (rbSemanal.isChecked) actvDiaSemana.text.toString() else if (rbMensual.isChecked) actvDiaMes.text.toString() else null
+
+            // Llamada a la lógica de verificación proactiva
+            viewLifecycleOwner.lifecycleScope.launch {
+                val aviso = viewModel.verificarContraindicaciones(nombre)
+                if (aviso != null) {
+                    MaterialAlertDialogBuilder(requireContext())
+                        .setTitle("⚠️ Alerta de Seguridad")
+                        .setMessage("$aviso\n\n¿Deseas guardarlo de todas formas?")
+                        .setPositiveButton("Guardar") { _, _ -> realizarGuardado(nombre, horas, mensaje, freq, dia) }
+                        .setNegativeButton("Cancelar", null)
+                        .show()
+                } else {
+                    realizarGuardado(nombre, horas, mensaje, freq, dia)
+                }
+            }
         }
 
+        // --- CARGA DE DATOS EN EDICIÓN ---
+        if (idMedEditar != -1) {
+            tvTituloPantalla.text = "Modificar Medicamento"
+            btnGuardar.text = "Guardar Cambios"
+            view.findViewById<View>(R.id.llBuscador).visibility = View.GONE
+
+            viewLifecycleOwner.lifecycleScope.launch {
+                val med = withContext(Dispatchers.IO) { AppDatabase.getDatabase(requireContext()).medicamentoDao().getMedicamentoById(idMedEditar) }
+                med?.let {
+                    etNombre.setText(it.nombre)
+                    etMensaje.setText(it.mensajePersonalizado)
+                    urlProspectoGuardada = it.urlProspecto
+                    contraindicacionesGuardadas = it.contraindicaciones
+
+                    when (it.frecuencia) {
+                        "Semanal" -> { rbSemanal.isChecked = true; actvDiaSemana.setText(it.diaEspecifico, false) }
+                        "Mensual" -> { rbMensual.isChecked = true; actvDiaMes.setText(it.diaEspecifico, false) }
+                        else -> view.findViewById<RadioButton>(R.id.rbDiaria).isChecked = true
+                    }
+                    if (it.horaToma.isNotBlank()) {
+                        listaHoras.addAll(it.horaToma.split(", "))
+                        tvHorasSeleccionadas.text = "Horas seleccionadas: ${it.horaToma}"
+                    }
+                }
+            }
+        }
+
+        // --- OBSERVADOR DE ESTADOS (API/GUARDADO) ---
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
@@ -174,16 +236,18 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
                         is CimaUiState.SuccessDetail -> {
                             progressBar.visibility = View.GONE
                             urlProspectoGuardada = state.detalle.urlProspecto
-                            contraindicacionesGuardadas = state.detalle.contraindicaciones
+                            contraindicacionesGuardadas = state.detalle.contraindicaciones ?: "Información no disponible digitalmente."
+
                             tvViasAdministracion.apply { visibility = View.VISIBLE; text = "Vía: ${state.detalle.viasAdministracion}" }
-                            tvContraindicaciones.apply { visibility = View.VISIBLE; text = "⚠️ Contraindicaciones:\n${Html.fromHtml(state.detalle.contraindicaciones ?: "", Html.FROM_HTML_MODE_LEGACY)}" }
-                            btnVerProspecto.apply { visibility = View.VISIBLE; setOnClickListener { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(state.detalle.urlProspecto))) } }
+                            tvContraindicaciones.apply { visibility = View.VISIBLE; text = "⚠️ Contraindicaciones:\n${Html.fromHtml(contraindicacionesGuardadas, Html.FROM_HTML_MODE_LEGACY)}" }
+                            btnVerProspecto.apply { visibility = View.VISIBLE; setOnClickListener { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(urlProspectoGuardada))) } }
                         }
                         is CimaUiState.Error -> {
                             progressBar.visibility = View.GONE
                             Snackbar.make(view, state.message, Snackbar.LENGTH_INDEFINITE).setAction("Reintentar") { viewModel.buscarMedicamento(etSearch.text.toString().trim()) }.show()
                         }
                         is CimaUiState.SaveSuccess -> {
+                            progressBar.visibility = View.GONE
                             Toast.makeText(requireContext(), "Guardado", Toast.LENGTH_SHORT).show()
                             viewModel.ultimoMedicamentoGuardado?.let { AlarmHelper(requireContext()).programarAlarma(it) }
                             findNavController().navigateUp()
@@ -193,5 +257,9 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
                 }
             }
         }
+    }
+
+    private fun realizarGuardado(nombre: String, hora: String, msg: String, freq: String, dia: String?) {
+        viewModel.validarYGuardar(nombre, hora, msg, freq, dia, urlProspectoGuardada, contraindicacionesGuardadas, idMedEditar)
     }
 }

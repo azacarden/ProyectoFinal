@@ -1,5 +1,6 @@
 package com.azahara.proyecto_final_azahara.repository
 
+import android.util.Log
 import com.azahara.proyecto_final_azahara.data.network.CimaApi
 import com.azahara.proyecto_final_azahara.data.network.MedicamentoBasicoDto
 import kotlinx.coroutines.Dispatchers
@@ -36,13 +37,16 @@ class CimaRepository(private val api: CimaApi) {
                 // Buscamos las contraindicaciones (Sección 4.3 de la AEMPS)
                 val secciones = api.getFichaTecnica(medicamento.nregistro)
                 val contraindicaciones = secciones.find { it.seccion == "4.3" }?.contenido
+                if (contraindicaciones.isNullOrBlank()) {
+                    Log.w("CIMA_API", "No se encontró sección 4.3 para: ${medicamento.nombre}")
+                }
 
                 MedicamentoDetalle(
                     nregistro = medicamento.nregistro,
                     nombre = medicamento.nombre,
                     viasAdministracion = vias,
-                    contraindicaciones = contraindicaciones,
-                    urlProspecto = prospectoUrl
+                    urlProspecto = prospectoUrl,
+                    contraindicaciones = contraindicaciones ?: "Información no disponible digitalmente."
                 )
             } catch (e: Exception) {
                 // Si la pastilla no tiene ficha técnica digitalizada, no rompemos la app,

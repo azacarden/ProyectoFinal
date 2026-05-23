@@ -61,4 +61,7 @@ interface MedicamentoDao {
 
     @androidx.room.Query("SELECT * FROM medicamentos")
     suspend fun obtenerTodosLosMedicamentosSync(): List<Medicamento>
+
+    @Query("SELECT * FROM medicamentos WHERE nombre = :nombre LIMIT 1")
+    suspend fun getMedicamentoByNombre(nombre: String): Medicamento?
 }
