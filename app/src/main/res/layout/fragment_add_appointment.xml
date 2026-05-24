@@ -36,7 +36,6 @@
                 android:inputType="text" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Campo para Médico -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/tilMedico"
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
@@ -60,7 +59,6 @@
             android:layout_marginTop="16dp"
             android:hint="Especialidad (Ej: Cardiología)"
             app:layout_constraintTop_toBottomOf="@id/tilMedico">
-
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etEspecialidad"
                 android:layout_width="match_parent"
@@ -99,13 +97,31 @@
         </LinearLayout>
 
         <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilReminderInterval"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:hint="Aviso previo de la cita"
+            app:layout_constraintTop_toBottomOf="@id/llFechaHora">
+
+            <AutoCompleteTextView
+                android:id="@+id/actvReminderInterval"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                android:padding="16dp" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/tilNotasCita"
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:hint="Notas (Ej: Ir en ayunas)"
-            app:layout_constraintTop_toBottomOf="@id/llFechaHora">
+            app:layout_constraintTop_toBottomOf="@id/tilReminderInterval">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etNotasCita"

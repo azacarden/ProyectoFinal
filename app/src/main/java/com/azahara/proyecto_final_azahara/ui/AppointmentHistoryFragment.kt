@@ -12,10 +12,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.azahara.proyecto_final_azahara.R
 import com.azahara.proyecto_final_azahara.data.local.AppDatabase
 import com.azahara.proyecto_final_azahara.viewmodel.AppointmentViewModel
-import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import kotlinx.coroutines.launch
 
-class AppointmentListFragment : Fragment(R.layout.fragment_appointment_list) {
+class AppointmentHistoryFragment : Fragment(R.layout.fragment_appointment_history) {
 
     private lateinit var viewModel: AppointmentViewModel
     private lateinit var adapter: AppointmentAdapter
@@ -23,13 +22,11 @@ class AppointmentListFragment : Fragment(R.layout.fragment_appointment_list) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val dao = AppDatabase.getDatabase(requireContext()).citaMedicaDao()
+        val database = AppDatabase.getDatabase(requireContext())
+        val dao = database.citaMedicaDao()
         viewModel = AppointmentViewModel(dao)
+        val rvPastCitas = view.findViewById<RecyclerView>(R.id.rvPastCitas)
 
-        val rvCitas = view.findViewById<RecyclerView>(R.id.rvCitas)
-        val fabAddCita = view.findViewById<ExtendedFloatingActionButton>(R.id.fabAddCita)
-
-// Actualizamos el constructor con las dos acciones (Borrar y Editar)
         adapter = AppointmentAdapter(
             lista = emptyList(),
             onBorrarClick = { cita ->
@@ -46,17 +43,13 @@ class AppointmentListFragment : Fragment(R.layout.fragment_appointment_list) {
                 findNavController().navigate(R.id.action_appointmentList_to_addAppointment, bundle)
             }
         )
-        rvCitas.adapter = adapter
 
-        // Navegar al formulario de Nueva Cita al pulsar el botón flotante
-        fabAddCita.setOnClickListener {
-            findNavController().navigate(R.id.action_appointmentList_to_addAppointment)
-        }
+        rvPastCitas.adapter = adapter
 
         // Observar la lista de citas en tiempo real desde Room
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.citasActivas.collect { lista ->
+                viewModel.citasPasadas.collect { lista ->
                     adapter.actualizarDatos(lista)
                 }
             }

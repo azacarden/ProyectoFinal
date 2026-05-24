@@ -60,10 +60,7 @@ class AlarmHelper(private val context: Context) {
             }
         }
     }
-
-    // -----------------------------------------------------
-    // 2. ALARMAS DE CITAS MÉDICAS (¡Las que faltaban!)
-    // -----------------------------------------------------
+    
     @SuppressLint("ScheduleExactAlarm")
     fun programarAlarmaCita(cita: CitaMedica) {
         val intent = Intent(context, AlarmReceiver::class.java).apply {

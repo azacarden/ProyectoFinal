@@ -24,14 +24,14 @@ class UserRepository(
                 val hashBuscado = CryptoUtils.sha256(contrasenaPlana)
 
                 // 2. Consultamos la base de datos de forma segura
-                val usuarioEncontrado = usuarioDao.obtenerUsuarioPorNombre(nombre)
+                val usuarioEncontrado = usuarioDao.getUsuarioPorId(nombre)
 
                 if (usuarioEncontrado != null && usuarioEncontrado.contrasenaHash == hashBuscado) {
 
                     var usuarioActualizado = usuarioEncontrado
 
                     // 3. SINCRONIZACIÓN DIFERIDA: Si no tiene UID, se registró offline. Lo intentamos subir ahora.
-                    if (usuarioActualizado.firebaseUid == null) {
+                    if (usuarioActualizado.id == null) {
                         try {
                             val authResult = firebaseAuth.createUserWithEmailAndPassword(
                                 usuarioActualizado.correo,
@@ -40,7 +40,7 @@ class UserRepository(
 
                             val firebaseUser = authResult.user
                             if (firebaseUser != null) {
-                                usuarioActualizado = usuarioActualizado.copy(firebaseUid = firebaseUser.uid)
+                                usuarioActualizado = usuarioActualizado.copy(id = firebaseUser.uid)
                                 usuarioDao.updateUsuario(usuarioActualizado)
                             }
                         } catch (e: Exception) {

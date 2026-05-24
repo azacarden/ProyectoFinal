@@ -15,12 +15,12 @@ import com.azahara.proyecto_final_azahara.model.Usuario
     entities = [
         Usuario::class,
         Medicamento::class,
-        HorarioMedicamento::class, // <--- INTEGRADO: Entidad de horarios atómicos
+        HorarioMedicamento::class,
         Historial::class,
         CitaMedica::class,
         AlarmaGeneral::class
     ],
-    version = 6,
+    version = 9,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

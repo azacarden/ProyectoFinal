@@ -16,7 +16,14 @@ class AppointmentViewModel(private val citaDao: CitaMedicaDao) : ViewModel() {
     private val _guardadoExitoso = MutableStateFlow<Boolean?>(null)
     val guardadoExitoso: StateFlow<Boolean?> = _guardadoExitoso.asStateFlow()
 
-    val citasActivas: StateFlow<List<CitaMedica>> = citaDao.getAllCitas()
+    val citasActivas: StateFlow<List<CitaMedica>> = citaDao.getActiveCitas()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    val citasPasadas: StateFlow<List<CitaMedica>> = citaDao.getPastCitas()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),

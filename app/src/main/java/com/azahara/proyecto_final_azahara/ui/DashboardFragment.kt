@@ -33,11 +33,11 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         }
 
         view.findViewById<MaterialCardView>(R.id.cardHistorial).setOnClickListener {
-            Toast.makeText(requireContext(), "Funcionalidad en desarrollo", Toast.LENGTH_SHORT).show()
+            findNavController().navigate(R.id.action_dashboard_to_appointmentHistory)
         }
 
-        view.findViewById<MaterialCardView>(R.id.cardAlarmas).setOnClickListener {
-            findNavController().navigate(R.id.action_dashboard_to_appointmentList)
+        view.findViewById<MaterialCardView>(R.id.cardNuevaCita).setOnClickListener {
+            findNavController().navigate(R.id.action_dashboard_to_addAppointment)
         }
 
         view.findViewById<MaterialCardView>(R.id.cardCuidadores).setOnClickListener {

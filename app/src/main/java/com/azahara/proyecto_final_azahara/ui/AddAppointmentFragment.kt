@@ -2,6 +2,8 @@ package com.azahara.proyecto_final_azahara.ui
 
 import android.os.Bundle
 import android.view.View
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
@@ -36,6 +38,14 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
 
     private var idCitaEditar: Int = -1
 
+    private val opcionesRecordatorio = linkedMapOf(
+        "1 hora antes" to 60,
+        "2 horas antes" to 120,
+        "12 horas antes" to 720,
+        "24 horas antes" to 1440,
+        "Personalizar..." to -1 // Valor centinela para detectar personalización
+    )
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -53,6 +63,23 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
         val btnFecha = view.findViewById<Button>(R.id.btnElegirFecha)
         val btnHora = view.findViewById<Button>(R.id.btnElegirHora)
         val btnGuardar = view.findViewById<Button>(R.id.btnGuardarCita)
+
+        val actvReminder = view.findViewById<AutoCompleteTextView>(R.id.actvReminderInterval)
+        val adapter = ArrayAdapter(
+            requireContext(),
+            android.R.layout.simple_dropdown_item_1line,
+            opcionesRecordatorio.keys.toList()
+        )
+        actvReminder.setAdapter(adapter)
+
+        actvReminder.setOnItemClickListener { parent, _, position, _ ->
+            val selectedText = parent.getItemAtPosition(position).toString()
+            val value = opcionesRecordatorio[selectedText]
+
+            if (value == -1) {
+                mostrarDialogoPersonalizado(actvReminder)
+            }
+        }
 
         if (idCitaEditar != -1) {
             tvTituloPantalla.text = "Modificar Cita Médica"
@@ -116,6 +143,7 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
             val medico = etMedico.text.toString().trim()
             val especialidad = etEspecialidad.text.toString().trim()
             val notas = etNotas.text.toString().trim()
+            val selectedText = actvReminder.text.toString()
 
             if (!fechaSeleccionada || !horaSeleccionada) {
                 Toast.makeText(requireContext(), "Selecciona fecha y hora", Toast.LENGTH_SHORT).show()
@@ -125,6 +153,17 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
             val error = viewModel.validarCita(motivo, medico, especialidad, calendarioCita.timeInMillis)
             if (error != null) {
                 Toast.makeText(requireContext(), error, Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+
+            val minutosSeleccionados: Int? = if (selectedText.contains("minutos antes")) {
+                selectedText.filter { it.isDigit() }.toIntOrNull()
+            } else {
+                opcionesRecordatorio[selectedText]
+            }
+
+            if (minutosSeleccionados == null) {
+                Toast.makeText(requireContext(), "Selecciona un tiempo de aviso válido", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -166,5 +205,32 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
                 }
             }
         }
+    }
+
+    private fun mostrarDialogoPersonalizado(textView: AutoCompleteTextView) {
+        val input = EditText(requireContext()).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            hint = "Minutos"
+        }
+
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Minutos previos")
+            .setMessage("Introduce los minutos de antelación:")
+            .setView(input)
+            .setPositiveButton("Aceptar") { _, _ ->
+                val minutos = input.text.toString().toIntOrNull()
+                if (minutos != null && minutos > 0) {
+                    // Actualizamos el campo de texto visualmente
+                    textView.setText("$minutos minutos antes", false)
+                } else {
+                    textView.setText("", false)
+                    Toast.makeText(requireContext(), "Introduce un número válido", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Cancelar") { dialog, _ ->
+                textView.setText("", false)
+                dialog.dismiss()
+            }
+            .show()
     }
 }

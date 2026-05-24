@@ -189,7 +189,7 @@
             </com.google.android.material.card.MaterialCardView>
 
             <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardAlarmas"
+                android:id="@+id/cardNuevaCita"
                 style="@style/Widget.Material3.CardView.Elevated"
                 android:layout_width="0dp"
                 android:layout_height="140dp"
@@ -205,7 +205,7 @@
                     <ImageView
                         android:layout_width="48dp"
                         android:layout_height="48dp"
-                        android:src="@android:drawable/ic_lock_idle_alarm"
+                        android:src="@android:drawable/ic_menu_my_calendar"
                         app:tint="?attr/colorPrimary" />
 
                     <TextView

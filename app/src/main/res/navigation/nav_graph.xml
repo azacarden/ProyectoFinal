@@ -25,26 +25,30 @@
         android:id="@+id/dashboardFragment"
         android:name="com.azahara.proyecto_final_azahara.ui.DashboardFragment"
         android:label="Pastillero">
-
         <action
             android:id="@+id/action_dashboard_to_addMedication"
             app:destination="@id/addMedicationFragment" />
-
         <action
             android:id="@+id/action_dashboard_to_medicationList"
             app:destination="@id/medicationListFragment" />
-
+        <action
+            android:id="@+id/action_dashboard_to_addAppointment"
+            app:destination="@id/addAppointmentFragment" />
         <action
             android:id="@+id/action_dashboard_to_appointmentList"
             app:destination="@id/appointmentListFragment" />
-
         <action
             android:id="@+id/action_dashboard_to_settings"
             app:destination="@id/settingsFragment" />
-
         <action
             android:id="@+id/action_dashboard_to_profile"
             app:destination="@id/profileFragment" />
+        <action
+            android:id="@+id/action_dashboard_to_addGeneralAlarm"
+            app:destination="@id/addGeneralAlarmFragment" />
+        <action
+            android:id="@+id/action_dashboard_to_appointmentHistory"
+            app:destination="@id/appointmentHistoryFragment" />
     </fragment>
 
     <fragment
@@ -55,12 +59,10 @@
     <fragment
         android:id="@+id/medicationListFragment"
         android:name="com.azahara.proyecto_final_azahara.ui.MedicationListFragment"
-        android:label="Mis Pastillas" >
-
+        android:label="Mis Pastillas">
         <action
             android:id="@+id/action_medicationList_to_addMedication"
             app:destination="@id/addMedicationFragment" />
-
     </fragment>
 
     <fragment
@@ -76,6 +78,17 @@
         android:id="@+id/addAppointmentFragment"
         android:name="com.azahara.proyecto_final_azahara.ui.AddAppointmentFragment"
         android:label="Programar Cita" />
+
+    <fragment
+        android:id="@+id/appointmentHistoryFragment"
+        android:name="com.azahara.proyecto_final_azahara.ui.AppointmentHistoryFragment"
+        android:label="Historial de Citas">
+    </fragment>
+
+    <fragment
+        android:id="@+id/addGeneralAlarmFragment"
+        android:name="com.azahara.proyecto_final_azahara.ui.AddGeneralAlarmFragment"
+        android:label="Programar Alarma" />
 
     <fragment
         android:id="@+id/settingsFragment"
