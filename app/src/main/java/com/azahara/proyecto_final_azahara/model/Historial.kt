@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import java.util.UUID
 
 @Entity(
     tableName = "historial_tomas",
@@ -27,10 +28,9 @@ import androidx.room.PrimaryKey
     ]
 )
 data class Historial(
-    @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
-    val usuarioId: Int,
-    val horarioId: Int, // <--- KEY COMPLIANCE: Conecta con la toma exacta del día
-    val fechaHoraReal: Long, // Timestamp en milisegundos
+    @PrimaryKey val id: String = UUID.randomUUID().toString(),
+    val usuarioId: String, // Ahora apunta al UID de tipo String de la tabla usuarios
+    val medicamentoId: String, // Ahora apunta al ID de tipo String del medicamento tomado
+    val fechaHora: Long,
     val estado: String // "Tomada", "Olvidada", "Omitida"
 )

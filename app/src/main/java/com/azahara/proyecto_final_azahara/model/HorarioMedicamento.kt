@@ -4,6 +4,8 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.azahara.proyecto_final_azahara.data.local.Medicamento
+import java.util.UUID
 
 @Entity(
     tableName = "horarios_medicamento",
@@ -18,8 +20,7 @@ import androidx.room.PrimaryKey
     indices = [Index(value = ["medicamentoId"])]
 )
 data class HorarioMedicamento(
-    @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
-    val medicamentoId: Int,
-    val horaToma: String // Formato estricto HH:mm de forma atómica
+    @PrimaryKey val id: String = UUID.randomUUID().toString(),
+    val medicamentoId: String,
+    val horaToma: String
 )

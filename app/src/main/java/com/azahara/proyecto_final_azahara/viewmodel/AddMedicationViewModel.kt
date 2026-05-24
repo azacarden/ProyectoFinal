@@ -2,15 +2,18 @@ package com.azahara.proyecto_final_azahara.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.azahara.proyecto_final_azahara.data.local.Medicamento
 import com.azahara.proyecto_final_azahara.data.local.MedicamentoDao
 import com.azahara.proyecto_final_azahara.data.network.MedicamentoBasicoDto
-import com.azahara.proyecto_final_azahara.model.Medicamento
+import com.azahara.proyecto_final_azahara.model.HorarioMedicamento
+import com.azahara.proyecto_final_azahara.model.MedicamentoConHorarios
 import com.azahara.proyecto_final_azahara.repository.CimaRepository
 import com.azahara.proyecto_final_azahara.repository.MedicamentoDetalle
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 sealed interface CimaUiState {
     object Idle : CimaUiState
@@ -29,7 +32,7 @@ class AddMedicationViewModel(
     private val _uiState = MutableStateFlow<CimaUiState>(CimaUiState.Idle)
     val uiState: StateFlow<CimaUiState> = _uiState.asStateFlow()
 
-    var ultimoMedicamentoGuardado: Medicamento? = null
+    var ultimoMedicamentoGuardado: MedicamentoConHorarios? = null
 
     fun buscarMedicamento(query: String) {
         if (query.isBlank()) return
@@ -40,9 +43,6 @@ class AddMedicationViewModel(
                 val resultados = repository.buscarPorNombre(query)
                 val queryLower = query.lowercase()
 
-                // BÚSQUEDA INTELIGENTE:
-                // 1. Priorizamos los que empiezan exactamente por lo que escribe el usuario.
-                // 2. Incluimos los que contienen la palabra como parte de un nombre compuesto.
                 val resultadosFiltrados = resultados.filter {
                     val nombre = it.nombre.lowercase()
                     nombre.startsWith(queryLower) || nombre.contains(" $queryLower")
@@ -60,40 +60,60 @@ class AddMedicationViewModel(
     }
 
     suspend fun verificarContraindicaciones(nombreNuevo: String): String? {
-        val misMedicamentos = medicamentoDao.obtenerTodosLosMedicamentosSync()
-        for (med in misMedicamentos) {
-            val contra = med.contraindicaciones ?: ""
+        val misMedicamentos = medicamentoDao.obtenerTodosLosMedicamentosConHorariosSync()
+        for (medConHorarios in misMedicamentos) {
+            val contra = medConHorarios.medicamento.contraindicaciones ?: ""
             if (contra.contains(nombreNuevo, ignoreCase = true)) {
-                return "Cuidado: ${med.nombre} tiene contraindicaciones con $nombreNuevo."
+                return "Cuidado: ${medConHorarios.medicamento.nombre} tiene contraindicaciones con $nombreNuevo."
             }
         }
         return null
     }
 
-    fun validarYGuardar(nombre: String, hora: String, mensaje: String, frecuencia: String, diaEspecifico: String?, url: String?, contra: String?, id: Int) {
+    fun validarYGuardar(
+        nombre: String,
+        horasTexto: String,
+        mensaje: String,
+        frecuencia: String,
+        diaEspecifico: String?,
+        url: String?,
+        contra: String?,
+        id: String?
+    ) {
         viewModelScope.launch {
             try {
-                // Validación duplicados (solo modo creación)
-                if (id == -1 && medicamentoDao.getMedicamentoByNombre(nombre) != null) {
+                val misMeds = medicamentoDao.obtenerTodosLosMedicamentosConHorariosSync()
+                val existe = misMeds.any { it.medicamento.nombre.equals(nombre, ignoreCase = true) }
+
+                if (id == null && existe) {
                     _uiState.value = CimaUiState.Error("Este medicamento ya está registrado.")
                     return@launch
                 }
 
+                val idFinal = id ?: UUID.randomUUID().toString()
+
                 val nuevoMedicamento = Medicamento(
-                    id = if (id == -1) 0 else id,
+                    id = idFinal,
                     nombre = nombre,
-                    horaToma = hora,
                     mensajePersonalizado = mensaje,
                     frecuencia = frecuencia,
-                    diaEspecifico = diaEspecifico,
                     urlProspecto = url,
                     contraindicaciones = contra
                 )
 
-                if (id == -1) medicamentoDao.insertMedicamento(nuevoMedicamento)
-                else medicamentoDao.updateMedicamento(nuevoMedicamento)
+                val listaHorarios = horasTexto.split(",").mapNotNull { horaStr ->
+                    val horaLimpia = horaStr.trim()
+                    if (horaLimpia.isNotEmpty()) {
+                        HorarioMedicamento(
+                            medicamentoId = idFinal,
+                            horaToma = horaLimpia
+                        )
+                    } else null
+                }
 
-                ultimoMedicamentoGuardado = nuevoMedicamento
+                medicamentoDao.insertMedicamentoConHorarios(nuevoMedicamento, listaHorarios)
+
+                ultimoMedicamentoGuardado = MedicamentoConHorarios(nuevoMedicamento, listaHorarios)
                 _uiState.value = CimaUiState.SaveSuccess
             } catch (e: Exception) {
                 _uiState.value = CimaUiState.Error("Error al guardar: ${e.message}")
