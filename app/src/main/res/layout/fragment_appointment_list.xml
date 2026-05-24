@@ -35,10 +35,9 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="24dp"
-        android:text="Nueva Cita"
+        android:text="Nueva Cita Médica"
         app:icon="@android:drawable/ic_input_add"
         app:backgroundTint="?attr/colorPrimary"
-        app:tint="#FFFFFF"
         android:textColor="#FFFFFF" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

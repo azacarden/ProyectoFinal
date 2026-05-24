@@ -68,12 +68,12 @@ class AlarmHelper(private val context: Context) {
     fun programarAlarmaCita(cita: CitaMedica) {
         val intent = Intent(context, AlarmReceiver::class.java).apply {
             putExtra("TIPO_ALARMA", "CITA")
-            putExtra("CITA_TITULO", cita.titulo)
-            putExtra("CITA_ESPECIALISTA", cita.especialista)
+            putExtra("CITA_MOTIVO", cita.motivo)
+            putExtra("CITA_MEDICO", cita.medico)
+            putExtra("CITA_ESPECIALIDAD", cita.especialidad)
             putExtra("CITA_NOTAS", cita.notas)
         }
 
-        // Le sumamos 10000 al ID para crear un canal único
         val pendingIntent = PendingIntent.getBroadcast(
             context,
             cita.id + 10000,
@@ -82,7 +82,6 @@ class AlarmHelper(private val context: Context) {
         )
 
         try {
-            // Se programa restando el tiempo de recordatorio previo (ej: 60 minutos antes)
             val tiempoAviso = cita.fechaHora - (cita.recordatorioPrevio * 60 * 1000)
             alarmManager.setExactAndAllowWhileIdle(
                 AlarmManager.RTC_WAKEUP,

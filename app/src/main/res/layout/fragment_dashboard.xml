@@ -60,11 +60,60 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Ver medicación diaria"
+                        android:text="Ver mi medicación diaria"
                         android:textSize="16sp"
                         android:textColor="?attr/colorPrimary" />
                 </LinearLayout>
             </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardCitas"
+            style="@style/Widget.Material3.CardView.Elevated"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="24dp"
+            app:cardBackgroundColor="?attr/colorPrimaryContainer">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="24dp">
+
+                <ImageView
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:src="@android:drawable/ic_menu_my_calendar"
+                    app:tint="?attr/colorPrimary" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginStart="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Mis citas médicas"
+                        android:textSize="24dp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorPrimary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Ver mis citas médicas"
+                        android:textSize="16dp"
+                        android:textColor="?attr/colorPrimary" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
         </com.google.android.material.card.MaterialCardView>
 
         <androidx.gridlayout.widget.GridLayout
@@ -82,14 +131,29 @@
                 app:layout_columnWeight="1"
                 android:layout_margin="8dp"
                 app:cardCornerRadius="24dp">
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:gravity="center"
                     android:orientation="vertical">
-                    <ImageView android:layout_width="48dp" android:layout_height="48dp" android:src="@android:drawable/ic_input_add" app:tint="?attr/colorPrimary" />
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Nueva Toma" android:textSize="18sp" android:textStyle="bold" android:layout_marginTop="8dp"/>
+
+                    <ImageView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:src="@android:drawable/ic_input_add"
+                        app:tint="?attr/colorPrimary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Nueva Toma"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:layout_marginTop="8dp"/>
+
                 </LinearLayout>
+
             </com.google.android.material.card.MaterialCardView>
 
             <com.google.android.material.card.MaterialCardView
@@ -105,9 +169,23 @@
                     android:layout_height="match_parent"
                     android:gravity="center"
                     android:orientation="vertical">
-                    <ImageView android:layout_width="48dp" android:layout_height="48dp" android:src="@android:drawable/ic_menu_recent_history" app:tint="?attr/colorPrimary" />
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Historial" android:textSize="18sp" android:textStyle="bold" android:layout_marginTop="8dp"/>
+
+                    <ImageView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:src="@android:drawable/ic_menu_recent_history"
+                        app:tint="?attr/colorPrimary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Historial"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:layout_marginTop="8dp"/>
+
                 </LinearLayout>
+
             </com.google.android.material.card.MaterialCardView>
 
             <com.google.android.material.card.MaterialCardView
@@ -123,9 +201,23 @@
                     android:layout_height="match_parent"
                     android:gravity="center"
                     android:orientation="vertical">
-                    <ImageView android:layout_width="48dp" android:layout_height="48dp" android:src="@android:drawable/ic_lock_idle_alarm" app:tint="?attr/colorPrimary" />
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Alarmas" android:textSize="18sp" android:textStyle="bold" android:layout_marginTop="8dp"/>
+
+                    <ImageView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:src="@android:drawable/ic_lock_idle_alarm"
+                        app:tint="?attr/colorPrimary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Nueva cita"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:layout_marginTop="8dp"/>
+
                 </LinearLayout>
+
             </com.google.android.material.card.MaterialCardView>
 
             <com.google.android.material.card.MaterialCardView
@@ -141,11 +233,27 @@
                     android:layout_height="match_parent"
                     android:gravity="center"
                     android:orientation="vertical">
-                    <ImageView android:layout_width="48dp" android:layout_height="48dp" android:src="@android:drawable/ic_menu_share" app:tint="?attr/colorPrimary" />
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Cuidadores" android:textSize="18sp" android:textStyle="bold" android:layout_marginTop="8dp"/>
+
+                    <ImageView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:src="@android:drawable/ic_menu_share"
+                        app:tint="?attr/colorPrimary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Cuidadores"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:layout_marginTop="8dp"/>
+
                 </LinearLayout>
+
             </com.google.android.material.card.MaterialCardView>
 
         </androidx.gridlayout.widget.GridLayout>
+
     </LinearLayout>
+
 </ScrollView>

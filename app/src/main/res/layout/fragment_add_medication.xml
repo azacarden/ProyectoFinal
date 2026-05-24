@@ -33,7 +33,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:hint="Buscar en CIMA (Ej: Paracetamol)" />
+                android:hint="Ej: Paracetamol" />
             <Button
                 android:id="@+id/btnSearch"
                 android:layout_width="wrap_content"
@@ -58,6 +58,7 @@
             android:layout_marginTop="16dp"
             android:hint="Nombre del medicamento"
             app:layout_constraintTop_toBottomOf="@id/llBuscador">
+
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etNombre"
                 android:layout_width="match_parent"

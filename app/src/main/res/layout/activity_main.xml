@@ -14,7 +14,7 @@
             android:id="@+id/topAppBar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:title="Pastillero Digital"
+            app:title="Mi agenda de salud"
             app:menu="@menu/top_app_bar_menu"
             style="@style/Widget.MaterialComponents.Toolbar.Primary" />
     </com.google.android.material.appbar.AppBarLayout>

@@ -33,18 +33,17 @@ class AppointmentAdapter(
 
     override fun onBindViewHolder(holder: AppointmentViewHolder, position: Int) {
         val item = lista[position]
-        holder.tvEspecialista.text = item.especialista
-        holder.tvMotivo.text = item.titulo
+
+        holder.tvEspecialista.text = "${item.medico} - ${item.especialidad}"
+        holder.tvMotivo.text = item.motivo
 
         val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
         holder.tvFechaHora.text = sdf.format(Date(item.fechaHora))
 
-        // Clic en el botón de la papelera
         holder.btnBorrar.setOnClickListener {
             onBorrarClick(item)
         }
 
-        // Clic en cualquier otra parte de la tarjeta -> Editar
         holder.vistaTarjeta.setOnClickListener {
             onItemClick(item)
         }

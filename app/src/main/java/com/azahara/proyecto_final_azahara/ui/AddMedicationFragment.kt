@@ -259,7 +259,8 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
         }
     }
 
-    private fun realizarGuardado(nombre: String, hora: String, msg: String, freq: String, dia: String?) {
+    private fun realizarGuardado(nombre: String, hora: String, msg: String, freq: String, dia: String?)
+    {
         viewModel.validarYGuardar(nombre, hora, msg, freq, dia, urlProspectoGuardada, contraindicacionesGuardadas, idMedEditar)
     }
 }

@@ -15,7 +15,7 @@
             android:id="@+id/tvTituloAddCita"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Programar Nueva Cita"
+            android:text="Programar Cita Médica"
             android:textSize="24sp"
             android:textStyle="bold"
             android:textColor="?attr/colorPrimary"
@@ -36,16 +36,33 @@
                 android:inputType="text" />
         </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- Campo para Médico -->
         <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/tilEspecialista"
+            android:id="@+id/tilMedico"
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:hint="Especialista (Ej: Dr. García - Cardiología)"
+            android:hint="Médico (Ej: Dr. García)"
             app:layout_constraintTop_toBottomOf="@id/tilTituloCita">
             <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etEspecialista"
+                android:id="@+id/etMedico"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilEspecialidad"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:hint="Especialidad (Ej: Cardiología)"
+            app:layout_constraintTop_toBottomOf="@id/tilMedico">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etEspecialidad"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="text" />
@@ -58,7 +75,7 @@
             android:orientation="horizontal"
             android:layout_marginTop="16dp"
             android:weightSum="2"
-            app:layout_constraintTop_toBottomOf="@id/tilEspecialista">
+            app:layout_constraintTop_toBottomOf="@id/tilEspecialidad">
 
             <Button
                 android:id="@+id/btnElegirFecha"
@@ -89,6 +106,7 @@
             android:layout_marginTop="16dp"
             android:hint="Notas (Ej: Ir en ayunas)"
             app:layout_constraintTop_toBottomOf="@id/llFechaHora">
+
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etNotasCita"
                 android:layout_width="match_parent"
@@ -101,7 +119,7 @@
             android:layout_width="match_parent"
             android:layout_height="64dp"
             android:layout_marginTop="32dp"
-            android:text="Guardar y Programar Aviso"
+            android:text="Guardar cita médica"
             android:textSize="18sp"
             app:layout_constraintTop_toBottomOf="@id/tilNotasCita" />
 

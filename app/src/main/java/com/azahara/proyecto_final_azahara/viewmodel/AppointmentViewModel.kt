@@ -23,45 +23,44 @@ class AppointmentViewModel(private val citaDao: CitaMedicaDao) : ViewModel() {
             initialValue = emptyList()
         )
 
-    // Variable temporal para guardar el ID de la cita recién creada y pasársela a la alarma
     var ultimaCitaGuardada: CitaMedica? = null
 
-    fun guardarCita(titulo: String, especialista: String, fechaHoraMilis: Long, notas: String) {
+    fun validarCita(motivo: String, medico: String, especialidad: String, fechaHoraMilis: Long): String? {
+        if (motivo.isBlank()) return "El motivo de la cita es obligatorio."
+        if (medico.isBlank()) return "El nombre del médico es obligatorio."
+        if (especialidad.isBlank()) return "La especialidad es obligatoria."
+        if (fechaHoraMilis < System.currentTimeMillis()) return "No puedes programar una cita en el pasado."
+        return null
+    }
+
+    fun guardarCita(motivo: String, medico: String, especialidad: String, fechaHoraMilis: Long, notas: String) {
         viewModelScope.launch {
             try {
                 val nuevaCita = CitaMedica(
-                    titulo = titulo,
-                    especialista = especialista,
+                    motivo = motivo,
+                    medico = medico,
+                    especialidad = especialidad,
                     fechaHora = fechaHoraMilis,
                     notas = notas,
-                    recordatorioPrevio = 60 // Por defecto avisamos 60 minutos (1 hora) antes
+                    recordatorioPrevio = 60
                 )
-
-                // Guardamos en Room y obtenemos el ID generado
                 val idGenerado = citaDao.insertCita(nuevaCita)
-
-                // Guardamos el objeto completo para que el Fragment pueda programar la alarma
                 ultimaCitaGuardada = nuevaCita.copy(id = idGenerado.toInt())
-
                 _guardadoExitoso.value = true
             } catch (e: Exception) {
                 _guardadoExitoso.value = false
             }
         }
     }
-    fun borrarCita(cita: CitaMedica) {
-        viewModelScope.launch {
-            citaDao.deleteCita(cita)
-        }
-    }
 
-    fun actualizarCita(id: Int, titulo: String, especialista: String, fechaHoraMilis: Long, notas: String) {
+    fun actualizarCita(id: Int, motivo: String, medico: String, especialidad: String, fechaHoraMilis: Long, notas: String) {
         viewModelScope.launch {
             try {
                 val citaModificada = CitaMedica(
-                    id = id, // Al pasarle el mismo ID, Room sabe que tiene que sobrescribir la antigua
-                    titulo = titulo,
-                    especialista = especialista,
+                    id = id,
+                    motivo = motivo,
+                    medico = medico,
+                    especialidad = especialidad,
                     fechaHora = fechaHoraMilis,
                     notas = notas,
                     recordatorioPrevio = 60
@@ -75,7 +74,9 @@ class AppointmentViewModel(private val citaDao: CitaMedicaDao) : ViewModel() {
         }
     }
 
-    fun resetearEstado() {
-        _guardadoExitoso.value = null
+    fun borrarCita(cita: CitaMedica) {
+        viewModelScope.launch { citaDao.deleteCita(cita) }
     }
+
+    fun resetearEstado() { _guardadoExitoso.value = null }
 }

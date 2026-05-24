@@ -43,5 +43,9 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         view.findViewById<MaterialCardView>(R.id.cardCuidadores).setOnClickListener {
             findNavController().navigate(R.id.action_dashboard_to_profile)
         }
+
+        view.findViewById<MaterialCardView>(R.id.cardCitas).setOnClickListener {
+            findNavController().navigate(R.id.action_dashboard_to_appointmentList)
+        }
     }
 }

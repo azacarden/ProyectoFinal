@@ -46,13 +46,14 @@ class AlarmReceiver : BroadcastReceiver() {
     // Funciones suspendidas: Solo pueden ser llamadas desde una Corrutina (hilo secundario)
 
     private suspend fun procesarAlarmaCita(context: Context, intent: Intent) {
-        val tituloCita = intent.getStringExtra("CITA_TITULO") ?: "Cita Médica"
-        val especialista = intent.getStringExtra("CITA_ESPECIALISTA") ?: ""
+        val motivo = intent.getStringExtra("CITA_MOTIVO") ?: "Cita Médica"
+        val medico = intent.getStringExtra("CITA_MEDICO") ?: ""
+        val especialidad = intent.getStringExtra("CITA_ESPECIALIDAD") ?: ""
         val notas = intent.getStringExtra("CITA_NOTAS") ?: ""
 
-        val mensajeCompleto = "Especialista: $especialista\nNotas: $notas"
+        val mensajeCompleto = "Especialista: $medico ($especialidad)\nNotas: $notas"
 
-        mostrarNotificacion(context, "📅 Próxima cita: $tituloCita", mensajeCompleto)
+        mostrarNotificacion(context, "📅 Próxima cita: $motivo", mensajeCompleto)
     }
 
     private suspend fun procesarAlarmaGeneral(context: Context, intent: Intent) {

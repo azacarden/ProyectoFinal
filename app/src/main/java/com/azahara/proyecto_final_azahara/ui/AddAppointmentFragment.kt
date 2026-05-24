@@ -12,7 +12,9 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.azahara.proyecto_final_azahara.R
+import com.azahara.proyecto_final_azahara.alarm.AlarmHelper
 import com.azahara.proyecto_final_azahara.data.local.AppDatabase
+import com.azahara.proyecto_final_azahara.model.CitaMedica
 import com.azahara.proyecto_final_azahara.viewmodel.AppointmentViewModel
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.timepicker.MaterialTimePicker
@@ -32,7 +34,6 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
     private var fechaSeleccionada = false
     private var horaSeleccionada = false
 
-    // Si esta variable se queda en -1 es una cita NUEVA; si cambia, es una EDICIÓN
     private var idCitaEditar: Int = -1
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -42,18 +43,17 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
         val dao = database.citaMedicaDao()
         viewModel = AppointmentViewModel(dao)
 
-        // Recuperamos el ID si venimos de pulsar una tarjeta
         idCitaEditar = arguments?.getInt("CITA_ID_EDITAR", -1) ?: -1
 
         val tvTituloPantalla = view.findViewById<TextView>(R.id.tvTituloAddCita)
-        val etTitulo = view.findViewById<EditText>(R.id.etTituloCita)
-        val etEspecialista = view.findViewById<EditText>(R.id.etEspecialista)
+        val etMotivo = view.findViewById<EditText>(R.id.etTituloCita)
+        val etMedico = view.findViewById<EditText>(R.id.etMedico)
+        val etEspecialidad = view.findViewById<EditText>(R.id.etEspecialidad)
         val etNotas = view.findViewById<EditText>(R.id.etNotasCita)
         val btnFecha = view.findViewById<Button>(R.id.btnElegirFecha)
         val btnHora = view.findViewById<Button>(R.id.btnElegirHora)
         val btnGuardar = view.findViewById<Button>(R.id.btnGuardarCita)
 
-        // MODO EDICIÓN: Si recibimos un ID válido, rellenamos los campos con la información de Room
         if (idCitaEditar != -1) {
             tvTituloPantalla.text = "Modificar Cita Médica"
             btnGuardar.text = "Guardar Cambios"
@@ -61,8 +61,9 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
             viewLifecycleOwner.lifecycleScope.launch {
                 val cita = withContext(Dispatchers.IO) { dao.getCitaById(idCitaEditar) }
                 cita?.let {
-                    etTitulo.setText(it.titulo)
-                    etEspecialista.setText(it.especialista)
+                    etMotivo.setText(it.motivo)
+                    etMedico.setText(it.medico)
+                    etEspecialidad.setText(it.especialidad)
                     etNotas.setText(it.notas)
 
                     calendarioCita.timeInMillis = it.fechaHora
@@ -77,7 +78,6 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
             }
         }
 
-        // Selector de Fecha
         btnFecha.setOnClickListener {
             val datePicker = MaterialDatePicker.Builder.datePicker()
                 .setTitleText("Seleccionar fecha")
@@ -93,7 +93,6 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
             datePicker.show(parentFragmentManager, "DATE_PICKER")
         }
 
-        // Selector de Hora
         btnHora.setOnClickListener {
             val timePicker = MaterialTimePicker.Builder()
                 .setTimeFormat(TimeFormat.CLOCK_24H)
@@ -112,36 +111,48 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
             timePicker.show(parentFragmentManager, "TIME_PICKER")
         }
 
-        // Guardar o Actualizar
         btnGuardar.setOnClickListener {
-            val titulo = etTitulo.text.toString().trim()
-            val especialista = etEspecialista.text.toString().trim()
+            val motivo = etMotivo.text.toString().trim()
+            val medico = etMedico.text.toString().trim()
+            val especialidad = etEspecialidad.text.toString().trim()
             val notas = etNotas.text.toString().trim()
 
-            if (titulo.isBlank() || especialista.isBlank() || !fechaSeleccionada || !horaSeleccionada) {
-                Toast.makeText(requireContext(), "Por favor, rellena todos los campos obligatorios", Toast.LENGTH_SHORT).show()
+            if (!fechaSeleccionada || !horaSeleccionada) {
+                Toast.makeText(requireContext(), "Selecciona fecha y hora", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val error = viewModel.validarCita(motivo, medico, especialidad, calendarioCita.timeInMillis)
+            if (error != null) {
+                Toast.makeText(requireContext(), error, Toast.LENGTH_LONG).show()
                 return@setOnClickListener
             }
 
             if (idCitaEditar == -1) {
-                // Modo Crear
-                viewModel.guardarCita(titulo, especialista, calendarioCita.timeInMillis, notas)
+                viewModel.guardarCita(motivo, medico, especialidad, calendarioCita.timeInMillis, notas)
             } else {
-                // Modo Editar: Primero cancelamos la alarma antigua por si cambió de hora
-                viewModel.ultimaCitaGuardada?.let { com.azahara.proyecto_final_azahara.alarm.AlarmHelper(requireContext()).cancelarAlarmaCita(it) }
-                // Guardamos los cambios
-                viewModel.actualizarCita(idCitaEditar, titulo, especialista, calendarioCita.timeInMillis, notas)
+                val helper = AlarmHelper(requireContext())
+                val citaAntigua = CitaMedica(
+                    id = idCitaEditar,
+                    motivo = "",
+                    medico = "",
+                    especialidad = "",
+                    fechaHora = 0L,
+                    notas = "",
+                    recordatorioPrevio = 60
+                )
+                helper.cancelarAlarmaCita(citaAntigua)
+
+                viewModel.actualizarCita(idCitaEditar, motivo, medico, especialidad, calendarioCita.timeInMillis, notas)
             }
         }
 
-        // Observar resultado
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.guardadoExitoso.collect { exito ->
                     if (exito == true) {
                         Toast.makeText(requireContext(), "Cita procesada correctamente", Toast.LENGTH_SHORT).show()
 
-                        // Programamos la alarma (sea nueva o modificada con la nueva hora)
                         viewModel.ultimaCitaGuardada?.let { cita ->
                             com.azahara.proyecto_final_azahara.alarm.AlarmHelper(requireContext()).programarAlarmaCita(cita)
                         }
