@@ -1,17 +1,16 @@
-package com.azahara.proyecto_final_azahara.model
+package com.azahara.proyecto_final_azahara.data.local
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.util.UUID
 
 @Entity(tableName = "medicamentos")
 data class Medicamento(
-    @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
+    @PrimaryKey val id: String = UUID.randomUUID().toString(), // Genera un identificador único universal por defecto
     val nombre: String,
     val mensajePersonalizado: String,
-    val horaToma: String,
-    val frecuencia: String,
-    val diaEspecifico: String? = null,
+    val horaToma: List<String>,
+    val frecuencia: String = "Diaria",
     val urlProspecto: String? = null,
     val contraindicaciones: String? = null
 )

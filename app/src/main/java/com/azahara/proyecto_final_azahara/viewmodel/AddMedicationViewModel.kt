@@ -2,6 +2,7 @@ package com.azahara.proyecto_final_azahara.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.azahara.proyecto_final_azahara.data.local.Medicamento
 import com.azahara.proyecto_final_azahara.data.local.MedicamentoDao
 import com.azahara.proyecto_final_azahara.data.network.MedicamentoBasicoDto
 import com.azahara.proyecto_final_azahara.model.Medicamento
@@ -11,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 sealed interface CimaUiState {
     object Idle : CimaUiState
@@ -40,9 +42,6 @@ class AddMedicationViewModel(
                 val resultados = repository.buscarPorNombre(query)
                 val queryLower = query.lowercase()
 
-                // BÚSQUEDA INTELIGENTE:
-                // 1. Priorizamos los que empiezan exactamente por lo que escribe el usuario.
-                // 2. Incluimos los que contienen la palabra como parte de un nombre compuesto.
                 val resultadosFiltrados = resultados.filter {
                     val nombre = it.nombre.lowercase()
                     nombre.startsWith(queryLower) || nombre.contains(" $queryLower")
@@ -70,17 +69,27 @@ class AddMedicationViewModel(
         return null
     }
 
-    fun validarYGuardar(nombre: String, hora: String, mensaje: String, frecuencia: String, diaEspecifico: String?, url: String?, contra: String?, id: Int) {
+    fun validarYGuardar(
+        nombre: String,
+        hora: String,
+        mensaje: String,
+        frecuencia: String,
+        diaEspecifico: String?,
+        url: String?,
+        contra: String?,
+        id: String?
+    ) {
         viewModelScope.launch {
             try {
-                // Validación duplicados (solo modo creación)
-                if (id == -1 && medicamentoDao.getMedicamentoByNombre(nombre) != null) {
+                if (id == null && medicamentoDao.getMedicamentoByNombre(nombre) != null) {
                     _uiState.value = CimaUiState.Error("Este medicamento ya está registrado.")
                     return@launch
                 }
 
+                val idFinal = id ?: UUID.randomUUID().toString()
+
                 val nuevoMedicamento = Medicamento(
-                    id = if (id == -1) 0 else id,
+                    id = idFinal,
                     nombre = nombre,
                     horaToma = hora,
                     mensajePersonalizado = mensaje,
@@ -90,8 +99,11 @@ class AddMedicationViewModel(
                     contraindicaciones = contra
                 )
 
-                if (id == -1) medicamentoDao.insertMedicamento(nuevoMedicamento)
-                else medicamentoDao.updateMedicamento(nuevoMedicamento)
+                if (id == null) {
+                    medicamentoDao.insertMedicamento(nuevoMedicamento)
+                } else {
+                    medicamentoDao.updateMedicamento(nuevoMedicamento)
+                }
 
                 ultimoMedicamentoGuardado = nuevoMedicamento
                 _uiState.value = CimaUiState.SaveSuccess

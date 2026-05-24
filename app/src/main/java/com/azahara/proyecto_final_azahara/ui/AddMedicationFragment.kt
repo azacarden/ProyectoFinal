@@ -45,7 +45,7 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
     }
 
     private val listaHoras = ArrayList<String>()
-    private var idMedEditar: Int = -1
+    private var idMedEditar: String? = null
     private var urlProspectoGuardada: String? = null
     private var contraindicacionesGuardadas: String? = null
     private lateinit var llOpcionesFrecuencia: View
@@ -57,7 +57,8 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        idMedEditar = arguments?.getInt("MEDICAMENTO_ID_EDITAR", -1) ?: -1
+        // Extraemos el String de los argumentos
+        idMedEditar = arguments?.getString("MEDICAMENTO_ID_EDITAR")
 
         val tvTituloPantalla = view.findViewById<TextView>(R.id.tvTituloAdd)
         val etSearch = view.findViewById<EditText>(R.id.etSearch)
@@ -106,16 +107,18 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
             actualizarVisibilidadFrecuencia(checkedId)
         }
 
-        if (idMedEditar != -1) {
+        // Evaluamos nulabilidad en lugar de -1
+        if (idMedEditar != null) {
             tvTituloPantalla.text = "Modificar Medicamento"
             btnGuardar.text = "Guardar Cambios"
             view.findViewById<View>(R.id.llBuscador).visibility = View.GONE
 
             viewLifecycleOwner.lifecycleScope.launch {
                 val med = withContext(Dispatchers.IO) {
-                    AppDatabase.getDatabase(requireContext()).medicamentoDao().getMedicamentoById(idMedEditar)
+                    // idMedEditar ahora es un String, compatible con la nueva entidad
+                    AppDatabase.getDatabase(requireContext()).medicamentoDao().getMedicamentoPorId(idMedEditar!!)
                 }
-                med?.let {
+                med.let {
                     etNombre.setText(it.nombre)
                     etMensaje.setText(it.mensajePersonalizado)
                     urlProspectoGuardada = it.urlProspecto

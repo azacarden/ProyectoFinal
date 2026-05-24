@@ -25,6 +25,12 @@ interface CitaMedicaDao {
     @Query("SELECT * FROM citas_medicas ORDER BY fechaHora ASC")
     fun getAllCitas(): Flow<List<CitaMedica>>
 
+    @Query("SELECT * FROM citas_medicas WHERE fechaHora >= (strftime('%s', 'now') * 1000) ORDER BY fechaHora ASC")
+    fun getActiveCitas(): Flow<List<CitaMedica>>
+
+    @Query("SELECT * FROM citas_medicas WHERE fechaHora < (strftime('%s', 'now') * 1000) ORDER BY fechaHora DESC")
+    fun getPastCitas(): Flow<List<CitaMedica>>
+
     @Query("SELECT * FROM citas_medicas WHERE id = :id")
     suspend fun getCitaById(id: Int): CitaMedica?
 }

@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.azahara.proyecto_final_azahara.data.local.Medicamento
 
 @Entity(
     tableName = "horarios_medicamento",

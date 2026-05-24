@@ -5,20 +5,20 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
-import com.azahara.proyecto_final_azahara.model.Usuario
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface UsuarioDao {
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
-    suspend fun insertUsuario(usuario: Usuario): Long
+    suspend fun insertUsuario(usuario: Usuario): String
 
     @Update
     suspend fun updateUsuario(usuario: Usuario)
 
-    @Query("SELECT * FROM usuarios WHERE nombreUsuario = :nombre LIMIT 1")
-    suspend fun obtenerUsuarioPorNombre(nombre: String): Usuario?
+    @Query("SELECT * FROM usuarios WHERE id = :id LIMIT 1")
+    suspend fun getUsuarioPorId(id: String): Flow<Usuario?>
 
-    @Query("SELECT * FROM usuarios WHERE firebaseUid = :uid LIMIT 1")
-    suspend fun obtenerUsuarioPorUid(uid: String): Usuario?
+    @Query("DELETE FROM usuarios WHERE id = :id")
+    suspend fun deleteUsuarioPorId(id: String)
 }
