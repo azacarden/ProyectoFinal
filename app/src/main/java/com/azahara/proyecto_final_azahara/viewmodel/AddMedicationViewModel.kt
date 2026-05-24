@@ -5,7 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.azahara.proyecto_final_azahara.data.local.Medicamento
 import com.azahara.proyecto_final_azahara.data.local.MedicamentoDao
 import com.azahara.proyecto_final_azahara.data.network.MedicamentoBasicoDto
-import com.azahara.proyecto_final_azahara.model.Medicamento
+import com.azahara.proyecto_final_azahara.model.HorarioMedicamento
+import com.azahara.proyecto_final_azahara.model.MedicamentoConHorarios
 import com.azahara.proyecto_final_azahara.repository.CimaRepository
 import com.azahara.proyecto_final_azahara.repository.MedicamentoDetalle
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,7 +32,7 @@ class AddMedicationViewModel(
     private val _uiState = MutableStateFlow<CimaUiState>(CimaUiState.Idle)
     val uiState: StateFlow<CimaUiState> = _uiState.asStateFlow()
 
-    var ultimoMedicamentoGuardado: Medicamento? = null
+    var ultimoMedicamentoGuardado: MedicamentoConHorarios? = null
 
     fun buscarMedicamento(query: String) {
         if (query.isBlank()) return
@@ -59,11 +60,11 @@ class AddMedicationViewModel(
     }
 
     suspend fun verificarContraindicaciones(nombreNuevo: String): String? {
-        val misMedicamentos = medicamentoDao.obtenerTodosLosMedicamentosSync()
-        for (med in misMedicamentos) {
-            val contra = med.contraindicaciones ?: ""
+        val misMedicamentos = medicamentoDao.obtenerTodosLosMedicamentosConHorariosSync()
+        for (medConHorarios in misMedicamentos) {
+            val contra = medConHorarios.medicamento.contraindicaciones ?: ""
             if (contra.contains(nombreNuevo, ignoreCase = true)) {
-                return "Cuidado: ${med.nombre} tiene contraindicaciones con $nombreNuevo."
+                return "Cuidado: ${medConHorarios.medicamento.nombre} tiene contraindicaciones con $nombreNuevo."
             }
         }
         return null
@@ -71,7 +72,7 @@ class AddMedicationViewModel(
 
     fun validarYGuardar(
         nombre: String,
-        hora: String,
+        horasTexto: String,
         mensaje: String,
         frecuencia: String,
         diaEspecifico: String?,
@@ -81,7 +82,10 @@ class AddMedicationViewModel(
     ) {
         viewModelScope.launch {
             try {
-                if (id == null && medicamentoDao.getMedicamentoByNombre(nombre) != null) {
+                val misMeds = medicamentoDao.obtenerTodosLosMedicamentosConHorariosSync()
+                val existe = misMeds.any { it.medicamento.nombre.equals(nombre, ignoreCase = true) }
+
+                if (id == null && existe) {
                     _uiState.value = CimaUiState.Error("Este medicamento ya está registrado.")
                     return@launch
                 }
@@ -91,21 +95,25 @@ class AddMedicationViewModel(
                 val nuevoMedicamento = Medicamento(
                     id = idFinal,
                     nombre = nombre,
-                    horaToma = hora,
                     mensajePersonalizado = mensaje,
                     frecuencia = frecuencia,
-                    diaEspecifico = diaEspecifico,
                     urlProspecto = url,
                     contraindicaciones = contra
                 )
 
-                if (id == null) {
-                    medicamentoDao.insertMedicamento(nuevoMedicamento)
-                } else {
-                    medicamentoDao.updateMedicamento(nuevoMedicamento)
+                val listaHorarios = horasTexto.split(",").mapNotNull { horaStr ->
+                    val horaLimpia = horaStr.trim()
+                    if (horaLimpia.isNotEmpty()) {
+                        HorarioMedicamento(
+                            medicamentoId = idFinal,
+                            horaToma = horaLimpia
+                        )
+                    } else null
                 }
 
-                ultimoMedicamentoGuardado = nuevoMedicamento
+                medicamentoDao.insertMedicamentoConHorarios(nuevoMedicamento, listaHorarios)
+
+                ultimoMedicamentoGuardado = MedicamentoConHorarios(nuevoMedicamento, listaHorarios)
                 _uiState.value = CimaUiState.SaveSuccess
             } catch (e: Exception) {
                 _uiState.value = CimaUiState.Error("Error al guardar: ${e.message}")

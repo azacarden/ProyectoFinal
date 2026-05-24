@@ -20,7 +20,6 @@ import com.azahara.proyecto_final_azahara.data.local.AppDatabase
 import com.azahara.proyecto_final_azahara.repository.MedicationRepository
 import com.azahara.proyecto_final_azahara.viewmodel.MedicationViewModel
 import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class MedicationListFragment : Fragment(R.layout.fragment_medication_list) {
@@ -42,11 +41,9 @@ class MedicationListFragment : Fragment(R.layout.fragment_medication_list) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // 1. Obtenemos el UID del usuario actual para las operaciones de borrado en la nube
         val prefs = requireContext().getSharedPreferences("SesionUsuario", Context.MODE_PRIVATE)
         val miUsuarioId = prefs.getString("usuario_identificado", "") ?: ""
 
-        // Lógica de Cuidador
         val pacienteUid = arguments?.getString("PACIENTE_UID")
         if (pacienteUid != null) {
             Toast.makeText(requireContext(), "Sincronizando pastillas de $pacienteUid...", Toast.LENGTH_SHORT).show()
@@ -63,20 +60,20 @@ class MedicationListFragment : Fragment(R.layout.fragment_medication_list) {
         val rvMedicamentos = view.findViewById<RecyclerView>(R.id.rvMedicamentos)
 
         adapter = MedicationAdapter(
-            onBorrarClick = { medicamento ->
+            onBorrarClick = { wrapper ->
                 viewLifecycleOwner.lifecycleScope.launch {
                     val dao = AppDatabase.getDatabase(requireContext()).medicamentoDao()
                     val repository = MedicationRepository(dao, FirebaseFirestore.getInstance())
 
-                    // Borrado 100% sincronizado (Room + Firestore)
-                    repository.eliminarMedicamento(medicamento.id, miUsuarioId)
+                    // Extraemos el ID y nombre desde la entidad base
+                    repository.eliminarMedicamento(wrapper.medicamento.id, miUsuarioId)
 
-                    Toast.makeText(requireContext(), "${medicamento.nombre} eliminado", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "${wrapper.medicamento.nombre} eliminado", Toast.LENGTH_SHORT).show()
                 }
             },
-            onItemClick = { medicamento ->
+            onItemClick = { wrapper ->
                 val bundle = Bundle().apply {
-                    putString("MEDICAMENTO_ID_EDITAR", medicamento.id)
+                    putString("MEDICAMENTO_ID_EDITAR", wrapper.medicamento.id)
                 }
                 findNavController().navigate(R.id.action_medicationList_to_addMedication, bundle)
             },
@@ -90,6 +87,7 @@ class MedicationListFragment : Fragment(R.layout.fragment_medication_list) {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                // Ahora recolectamos MedicamentoConHorarios
                 viewModel.medicamentos.collect { listaPastillas ->
                     adapter.actualizarDatos(listaPastillas)
                 }

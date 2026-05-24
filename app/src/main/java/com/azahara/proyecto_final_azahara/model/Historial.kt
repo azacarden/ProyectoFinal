@@ -4,7 +4,6 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.azahara.proyecto_final_azahara.data.local.Usuario
 import java.util.UUID
 
 @Entity(

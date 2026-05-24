@@ -10,17 +10,17 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.azahara.proyecto_final_azahara.R
-import com.azahara.proyecto_final_azahara.model.Medicamento
+import com.azahara.proyecto_final_azahara.model.MedicamentoConHorarios
 
 sealed class MedicationListItem {
     data class Header(val titulo: String) : MedicationListItem()
-    data class Item(val medicamento: Medicamento) : MedicationListItem()
+    // 1. Actualizamos el ítem para que reciba la nueva estructura compuesta
+    data class Item(val medicamentoWrapper: MedicamentoConHorarios) : MedicationListItem()
 }
 
-// 1. Heredamos de ListAdapter y le pasamos nuestro MedicationDiffCallback
 class MedicationAdapter(
-    private val onBorrarClick: (Medicamento) -> Unit,
-    private val onItemClick: (Medicamento) -> Unit,
+    private val onBorrarClick: (MedicamentoConHorarios) -> Unit,
+    private val onItemClick: (MedicamentoConHorarios) -> Unit,
     private val onProspectoClick: (String) -> Unit
 ) : ListAdapter<MedicationListItem, RecyclerView.ViewHolder>(MedicationDiffCallback()) {
 
@@ -60,7 +60,6 @@ class MedicationAdapter(
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        // getItem(position) es un método nativo de ListAdapter
         when (val elemento = getItem(position)) {
             is MedicationListItem.Header -> {
                 val headerHolder = holder as HeaderViewHolder
@@ -68,43 +67,51 @@ class MedicationAdapter(
             }
             is MedicationListItem.Item -> {
                 val itemHolder = holder as MedicationViewHolder
-                val item = elemento.medicamento
 
-                itemHolder.tvNombre.text = item.nombre
-                itemHolder.tvMensaje.text = if (item.mensajePersonalizado.isBlank()) "Sin descripción" else item.mensajePersonalizado
+                // 2. Desempaquetamos la entidad base y sus horarios
+                val wrapper = elemento.medicamentoWrapper
+                val med = wrapper.medicamento
+                val listaHoras = wrapper.horarios
 
-                val detalleCalendario = when (item.frecuencia) {
-                    "Semanal" -> " - Semanal (Cada ${item.diaEspecifico})"
-                    "Mensual" -> " - Mensual (Los días ${item.diaEspecifico})"
+                itemHolder.tvNombre.text = med.nombre
+                itemHolder.tvMensaje.text = if (med.mensajePersonalizado.isBlank()) "Sin descripción" else med.mensajePersonalizado
+
+                // 3. Unimos los objetos HorarioMedicamento en un solo String visual
+                val horasTexto = listaHoras.joinToString(", ") { it.horaToma }
+
+                // Puesto que ya no tienes diaEspecifico, mostramos solo la frecuencia general
+                val detalleCalendario = when (med.frecuencia) {
+                    "Semanal" -> " - Semanal"
+                    "Mensual" -> " - Mensual"
                     else -> " - A diario"
                 }
-                itemHolder.tvHora.text = "Horas: ${item.horaToma}$detalleCalendario"
 
-                if (!item.urlProspecto.isNullOrEmpty()) {
+                itemHolder.tvHora.text = "Horas: $horasTexto$detalleCalendario"
+
+                if (!med.urlProspecto.isNullOrEmpty()) {
                     itemHolder.btnProspecto.visibility = View.VISIBLE
-                    itemHolder.btnProspecto.setOnClickListener { onProspectoClick(item.urlProspecto) }
+                    itemHolder.btnProspecto.setOnClickListener { onProspectoClick(med.urlProspecto) }
                 } else {
                     itemHolder.btnProspecto.visibility = View.GONE
                 }
 
-                itemHolder.btnBorrar.setOnClickListener { onBorrarClick(item) }
-                itemHolder.vistaTarjeta.setOnClickListener { onItemClick(item) }
+                itemHolder.btnBorrar.setOnClickListener { onBorrarClick(wrapper) }
+                itemHolder.vistaTarjeta.setOnClickListener { onItemClick(wrapper) }
             }
         }
     }
 
-    // 2. Esta función sigue siendo tuya, pero ahora llama a submitList()
-    fun actualizarDatos(medicamentos: List<Medicamento>) {
+    fun actualizarDatos(medicamentos: List<MedicamentoConHorarios>) {
         val listaAgrupada = agruparYOrdenar(medicamentos)
         submitList(listaAgrupada)
     }
 
-    private fun agruparYOrdenar(medicamentos: List<Medicamento>): List<MedicationListItem> {
+    private fun agruparYOrdenar(medicamentos: List<MedicamentoConHorarios>): List<MedicationListItem> {
         val listaFinal = mutableListOf<MedicationListItem>()
 
-        val diarias = medicamentos.filter { it.frecuencia == "Diaria" }.sortedBy { it.nombre.lowercase() }
-        val semanales = medicamentos.filter { it.frecuencia == "Semanal" }.sortedBy { it.nombre.lowercase() }
-        val mensuales = medicamentos.filter { it.frecuencia == "Mensual" }.sortedBy { it.nombre.lowercase() }
+        val diarias = medicamentos.filter { it.medicamento.frecuencia == "Diaria" }.sortedBy { it.medicamento.nombre.lowercase() }
+        val semanales = medicamentos.filter { it.medicamento.frecuencia == "Semanal" }.sortedBy { it.medicamento.nombre.lowercase() }
+        val mensuales = medicamentos.filter { it.medicamento.frecuencia == "Mensual" }.sortedBy { it.medicamento.nombre.lowercase() }
 
         if (diarias.isNotEmpty()) {
             listaFinal.add(MedicationListItem.Header("📅️ Tomas Diarias"))
@@ -123,19 +130,16 @@ class MedicationAdapter(
     }
 }
 
-// 3. El motor de las animaciones: Le enseñamos a Android a comparar
 class MedicationDiffCallback : DiffUtil.ItemCallback<MedicationListItem>() {
-
-    // ¿Es el mismo elemento lógico? (Comparamos IDs)
     override fun areItemsTheSame(oldItem: MedicationListItem, newItem: MedicationListItem): Boolean {
         return when {
             oldItem is MedicationListItem.Header && newItem is MedicationListItem.Header -> oldItem.titulo == newItem.titulo
-            oldItem is MedicationListItem.Item && newItem is MedicationListItem.Item -> oldItem.medicamento.id == newItem.medicamento.id
+            oldItem is MedicationListItem.Item && newItem is MedicationListItem.Item ->
+                oldItem.medicamentoWrapper.medicamento.id == newItem.medicamentoWrapper.medicamento.id
             else -> false
         }
     }
 
-    // ¿Ha cambiado visualmente algo en su contenido? (Comparamos el objeto)
     override fun areContentsTheSame(oldItem: MedicationListItem, newItem: MedicationListItem): Boolean {
         return oldItem == newItem
     }

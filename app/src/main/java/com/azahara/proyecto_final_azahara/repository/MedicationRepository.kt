@@ -3,39 +3,51 @@ package com.azahara.proyecto_final_azahara.repository
 import com.azahara.proyecto_final_azahara.data.local.Medicamento
 import com.azahara.proyecto_final_azahara.data.local.MedicamentoDao
 import com.azahara.proyecto_final_azahara.data.remote.MedicamentoDTO
+import com.azahara.proyecto_final_azahara.model.HorarioMedicamento
+import com.azahara.proyecto_final_azahara.model.MedicamentoConHorarios
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
 class MedicationRepository(
     private val medicamentoDao: MedicamentoDao,
     private val firestore: FirebaseFirestore
 ) {
-    fun obtenerMedicamentosActivos(): Flow<List<Medicamento>> {
-        return medicamentoDao.getAllMedicamentos()
+    fun obtenerMedicamentosActivos(): Flow<List<MedicamentoConHorarios>> {
+        return medicamentoDao.getAllMedicamentosConHorarios()
     }
 
-    suspend fun guardarMedicamento(medicamento: Medicamento, usuarioId: String): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun guardarMedicamento(
+        medicamentoConHorarios: MedicamentoConHorarios,
+        usuarioId: String
+    ): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            medicamentoDao.insertMedicamento(medicamento)
+            medicamentoDao.insertMedicamentoConHorarios(
+                medicamentoConHorarios.medicamento,
+                medicamentoConHorarios.horarios
+            )
 
             val dto = MedicamentoDTO(
-                idLocal = medicamento.id,
-                nombre = medicamento.nombre,
-                mensajePersonalizado = medicamento.mensajePersonalizado,
-                horarios = medicamento.horaToma,
-                frecuencia = medicamento.frecuencia,
-                urlProspecto = medicamento.urlProspecto,
-                contraindicaciones = medicamento.contraindicaciones
+                idLocal = medicamentoConHorarios.medicamento.id,
+                nombre = medicamentoConHorarios.medicamento.nombre,
+                mensajePersonalizado = medicamentoConHorarios.medicamento.mensajePersonalizado,
+                horarios = medicamentoConHorarios.horarios.map { it.horaToma },
+                frecuencia = medicamentoConHorarios.medicamento.frecuencia,
+                urlProspecto = medicamentoConHorarios.medicamento.urlProspecto,
+                contraindicaciones = medicamentoConHorarios.medicamento.contraindicaciones
             )
 
             firestore.collection("usuarios")
                 .document(usuarioId)
                 .collection("medicamentos")
-                .document(medicamento.id)
+                .document(medicamentoConHorarios.medicamento.id)
                 .set(dto)
+                .await()
 
             Result.success(Unit)
         } catch (e: Exception) {
@@ -52,6 +64,7 @@ class MedicationRepository(
                 .collection("medicamentos")
                 .document(medicamentoId)
                 .delete()
+                .await()
 
             Result.success(Unit)
         } catch (e: Exception) {
@@ -59,11 +72,7 @@ class MedicationRepository(
         }
     }
 
-    /**
-     * OPERACIÓN DEL CUIDADOR: Listener en tiempo real usando el SDK de Firebase.
-     * Descarga la nube, la traduce a modo local, y sobrescribe la base de datos (Room).
-     */
-    fun escucharMedicacionPaciente(pacienteUid: String): Flow<Boolean> = kotlinx.coroutines.flow.callbackFlow {
+    fun escucharMedicacionPaciente(pacienteUid: String): Flow<Boolean> = callbackFlow {
         val coleccionRef = firestore.collection("usuarios").document(pacienteUid).collection("medicamentos")
 
         val listener = coleccionRef.addSnapshotListener { snapshot, error ->
@@ -78,25 +87,35 @@ class MedicationRepository(
                         it.toObject(MedicamentoDTO::class.java)
                     }
 
-                    // Mapeo Inverso: DTO (Nube con String) -> Entidad (Room con String)
-                    val medicamentosLocales = medicamentosNube.map { dto ->
-                        Medicamento(
+                    val nuevosMedicamentos = mutableListOf<Medicamento>()
+                    val nuevosHorarios = mutableListOf<HorarioMedicamento>()
+
+                    for (dto in medicamentosNube) {
+                        val med = Medicamento(
                             id = dto.idLocal,
                             nombre = dto.nombre,
-                            horaToma = dto.horarios.joinToString(", "),
-                            frecuencia = dto.frecuencia,
                             mensajePersonalizado = dto.mensajePersonalizado,
+                            frecuencia = dto.frecuencia,
                             urlProspecto = dto.urlProspecto,
                             contraindicaciones = dto.contraindicaciones
                         )
+                        nuevosMedicamentos.add(med)
+
+                        val horarios = dto.horarios.map { horaString ->
+                            HorarioMedicamento(
+                                medicamentoId = dto.idLocal,
+                                horaToma = horaString
+                            )
+                        }
+                        nuevosHorarios.addAll(horarios)
                     }
 
-                    medicamentoDao.reemplazarTodosLosMedicamentos(medicamentosLocales)
+                    medicamentoDao.reemplazarTodosLosMedicamentos(nuevosMedicamentos, nuevosHorarios)
                     trySend(true)
                 }
             }
         }
 
-        kotlinx.coroutines.channels.awaitClose { listener.remove() }
+        awaitClose { listener.remove() }
     }
 }
