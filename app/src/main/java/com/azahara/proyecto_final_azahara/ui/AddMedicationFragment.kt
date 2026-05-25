@@ -1,5 +1,6 @@
 package com.azahara.proyecto_final_azahara.ui
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -26,7 +27,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
-import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
@@ -38,9 +38,10 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
     private val viewModel: AddMedicationViewModel by viewModels {
         object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                val dao = AppDatabase.getDatabase(requireContext()).medicamentoDao()
+                val database = AppDatabase.getDatabase(requireContext())
+                val dao = database.medicamentoDao()
                 val cimaRepo = CimaRepository(RetrofitClient.cimaApi)
-                val medRepo = MedicationRepository(dao, FirebaseFirestore.getInstance())
+                val medRepo = MedicationRepository(dao, com.google.firebase.firestore.FirebaseFirestore.getInstance())
                 @Suppress("UNCHECKED_CAST")
                 return AddMedicationViewModel(cimaRepo, medRepo, dao) as T
             }
@@ -136,10 +137,9 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
                     rgFrecuencia.check(idRadioButton)
 
                     if (it.horarios.isNotEmpty()) {
-                        // Limpiamos y rellenamos la lista visual con las horas extraídas de los objetos relacionales
                         listaHoras.clear()
                         listaHoras.addAll(it.horarios.map { horario -> horario.horaToma })
-                        tvHorasSeleccionadas.text = "Horas seleccionadas: ${listaHoras.joinToString(", ")}"
+                        tvHorasSeleccionadas.text = "Horas (Toca para eliminar): ${listaHoras.joinToString(", ")}"
                     }
                 }
             }
@@ -156,10 +156,32 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
                 if (!listaHoras.contains(horaFormateada)) {
                     listaHoras.add(horaFormateada)
                     listaHoras.sort()
-                    tvHorasSeleccionadas.text = "Horas seleccionadas: ${listaHoras.joinToString(", ")}"
+                    tvHorasSeleccionadas.text = "Horas (Toca para eliminar): ${listaHoras.joinToString(", ")}"
                 }
             }
             timePicker.show(parentFragmentManager, "TIME_PICKER")
+        }
+
+        // 🛠️ ¡NUEVO UX! Al pulsar sobre el cuadro de horas, abrimos un menú para eliminar la hora errónea
+        tvHorasSeleccionadas.setOnClickListener {
+            if (listaHoras.isEmpty()) return@setOnClickListener
+
+            val horasArray = listaHoras.toTypedArray()
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Selecciona la hora que deseas eliminar:")
+                .setItems(horasArray) { _, idx ->
+                    val horaEliminar = horasArray[idx]
+                    listaHoras.remove(horaEliminar)
+
+                    if (listaHoras.isEmpty()) {
+                        tvHorasSeleccionadas.text = "Ninguna hora seleccionada todavía"
+                    } else {
+                        tvHorasSeleccionadas.text = "Horas (Toca para eliminar): ${listaHoras.joinToString(", ")}"
+                    }
+                    Toast.makeText(requireContext(), "Hora $horaEliminar quitada", Toast.LENGTH_SHORT).show()
+                }
+                .setNegativeButton("Cancelar", null)
+                .show()
         }
 
         btnSearch.setOnClickListener {
@@ -234,7 +256,6 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
                             progressBar.visibility = View.GONE
                             Toast.makeText(requireContext(), "Guardado", Toast.LENGTH_SHORT).show()
 
-                            // Extraemos el wrapper completo y reprogramamos las alarmas
                             viewModel.ultimoMedicamentoGuardado?.let { wrapper ->
                                 AlarmHelper(requireContext()).programarAlarma(wrapper)
                             }
@@ -251,8 +272,6 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
         val prefs = requireContext().getSharedPreferences("SesionUsuario", android.content.Context.MODE_PRIVATE)
         val miNombre = prefs.getString("usuario_identificado", "Paciente") ?: "Paciente"
         val miUidLocal = prefs.getString("firebase_uid", "") ?: ""
-
-        // CORREGIDO: Si hay un PACIENTE_UID en los argumentos, guardamos en su carpeta; si no, en la mía.
         val targetUid = arguments?.getString("PACIENTE_UID") ?: miUidLocal
 
         viewModel.validarYGuardar(nombre, hora, msg, freq, dia, urlProspectoGuardada, contraindicacionesGuardadas, idMedEditar, targetUid, "Añadido por: $miNombre")

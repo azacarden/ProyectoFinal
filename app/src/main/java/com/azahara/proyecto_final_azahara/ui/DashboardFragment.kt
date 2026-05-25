@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.azahara.proyecto_final_azahara.R
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.firestore.FirebaseFirestore
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
@@ -27,22 +28,18 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
     private var miRol = "Paciente"
     private var miUid = ""
 
-    // Estado del paciente seleccionado en sesión de Cuidador
     private var pacienteSeleccionadoUid: String? = null
     private var pacienteSeleccionadoNombre: String? = null
 
-    // Vistas del Layout
     private lateinit var tvSaludo: TextView
     private lateinit var btnVolverPacientes: Button
     private lateinit var llCuidadorHub: LinearLayout
     private lateinit var svDashboardSalud: View
     private lateinit var rvPacientes: RecyclerView
 
-    // Elementos mutables del botón Cuidadores
     private lateinit var ivIconoCuidadores: ImageView
     private lateinit var tvTituloCuidadores: TextView
 
-    // Receptor del Escáner QR
     private val barcodeLauncher = registerForActivityResult(ScanContract()) { result ->
         if (result.contents == null) {
             Toast.makeText(requireContext(), "Escaneo cancelado", Toast.LENGTH_SHORT).show()
@@ -54,13 +51,11 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // 1. Cargar preferencias del usuario logueado
         val prefs = requireContext().getSharedPreferences("SesionUsuario", Context.MODE_PRIVATE)
         miUsuarioNombre = prefs.getString("usuario_identificado", "Usuario") ?: "Usuario"
         miRol = prefs.getString("rol_usuario", "Paciente") ?: "Paciente"
         miUid = prefs.getString("firebase_uid", "") ?: ""
 
-        // 2. Vincular elementos visuales
         tvSaludo = view.findViewById(R.id.tvSaludoDashboard)
         btnVolverPacientes = view.findViewById(R.id.btnVolverPacientes)
         llCuidadorHub = view.findViewById(R.id.llCuidadorHub)
@@ -70,7 +65,6 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         ivIconoCuidadores = view.findViewById(R.id.ivIconoCuidadores)
         tvTituloCuidadores = view.findViewById(R.id.tvTituloCuidadores)
 
-        // 3. Configurar Acción de Escaneo
         view.findViewById<MaterialCardView>(R.id.cardEscanearPaciente).setOnClickListener {
             val options = ScanOptions().apply {
                 setDesiredBarcodeFormats(ScanOptions.QR_CODE)
@@ -80,14 +74,12 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
             barcodeLauncher.launch(options)
         }
 
-        // 4. Configurar Botón "Volver" para el cuidador
         btnVolverPacientes.setOnClickListener {
             pacienteSeleccionadoUid = null
             pacienteSeleccionadoNombre = null
             evaluarLayoutPorEstados()
         }
 
-        // 5. Configuración de clics en las tarjetas de salud con inyección de IDs dinámicos
         view.findViewById<MaterialCardView>(R.id.cardMedicacion).setOnClickListener {
             val bundle = Bundle().apply { putString("PACIENTE_UID", obtenerUidDestino()) }
             findNavController().navigate(R.id.action_dashboard_to_medicationList, bundle)
@@ -114,53 +106,42 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         }
 
         view.findViewById<MaterialCardView>(R.id.cardCuidadores).setOnClickListener {
-            // Navega al Perfil (Allí implementaremos la visualización de datos personales)
             val bundle = Bundle().apply { putString("PACIENTE_UID", obtenerUidDestino()) }
             findNavController().navigate(R.id.action_dashboard_to_profile, bundle)
         }
 
-        // 6. Lanzar renderizado inicial
         evaluarLayoutPorEstados()
     }
 
-    /**
-     * Motor de renderizado dinámico según el Rol y la selección de pacientes
-     */
     private fun evaluarLayoutPorEstados() {
         if (miRol == "Cuidador") {
             if (pacienteSeleccionadoUid == null) {
-                // Modo A: Panel de Selección de pacientes
                 tvSaludo.text = "¡Hola, $miUsuarioNombre!\nGestión de Cuidados"
                 llCuidadorHub.visibility = View.VISIBLE
                 svDashboardSalud.visibility = View.GONE
                 btnVolverPacientes.visibility = View.GONE
                 cargarListaPacientes()
             } else {
-                // Modo B: Monitorizando a un paciente seleccionado
                 tvSaludo.text = "Monitorizando a:\n$pacienteSeleccionadoNombre"
                 llCuidadorHub.visibility = View.GONE
                 svDashboardSalud.visibility = View.VISIBLE
                 btnVolverPacientes.visibility = View.VISIBLE
 
-                // UX: Mutamos el botón Cuidadores porque es el Cuidador quien mira
                 ivIconoCuidadores.setImageResource(android.R.drawable.ic_menu_info_details)
                 tvTituloCuidadores.text = "Info Paciente"
             }
         } else {
-            // Modo C: Flujo natural del Paciente de toda la vida
             tvSaludo.text = "¡Hola, $miUsuarioNombre!\n¿Qué deseas hacer hoy?"
             llCuidadorHub.visibility = View.GONE
             svDashboardSalud.visibility = View.VISIBLE
             btnVolverPacientes.visibility = View.GONE
 
-            // Reestablecemos valores nativos del Paciente
             ivIconoCuidadores.setImageResource(android.R.drawable.ic_menu_share)
             tvTituloCuidadores.text = "Cuidadores"
         }
     }
 
     private fun obtenerUidDestino(): String {
-        // Si soy cuidador devuelvo el ID del abuelo/paciente; si soy paciente devuelvo mi propio UID
         return if (miRol == "Cuidador") pacienteSeleccionadoUid ?: miUid else miUid
     }
 
@@ -178,11 +159,25 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
 
                 rvPacientes.layoutManager = LinearLayoutManager(requireContext())
                 rvPacientes.adapter = PacientesDashboardAdapter(listaPacientes) { uid, nombre ->
-                    // Al pulsar sobre un paciente, mutamos la pantalla
                     pacienteSeleccionadoUid = uid
                     pacienteSeleccionadoNombre = nombre
                     evaluarLayoutPorEstados()
                 }
+            }
+    }
+
+    // 🛠️ ¡NUEVA FUNCIÓN! Borra la vinculación de Firestore de forma limpia
+    private fun desvincularPacienteDeLaNube(pacienteUid: String, pacienteNombre: String) {
+        db.collection("vinculaciones")
+            .whereEqualTo("cuidadorUid", miUid)
+            .whereEqualTo("pacienteUid", pacienteUid)
+            .get()
+            .addOnSuccessListener { snapshots ->
+                for (documento in snapshots.documents) {
+                    documento.reference.delete()
+                }
+                Toast.makeText(requireContext(), "$pacienteNombre desvinculado con éxito", Toast.LENGTH_SHORT).show()
+                cargarListaPacientes() // Refrescamos la lista de la pantalla
             }
     }
 
@@ -203,7 +198,6 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
                     db.collection("vinculaciones").add(vinculacion)
                         .addOnSuccessListener {
                             Toast.makeText(requireContext(), "¡Vinculado con éxito a $nombrePaciente!", Toast.LENGTH_SHORT).show()
-                            // Auto-seleccionamos al paciente recién escaneado para mejorar la UX
                             pacienteSeleccionadoUid = pacienteUid
                             pacienteSeleccionadoNombre = nombrePaciente
                             evaluarLayoutPorEstados()
@@ -214,7 +208,6 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
             }
     }
 
-    // Adaptador interno optimizado para renderizar los pacientes en el Dashboard
     inner class PacientesDashboardAdapter(
         private val pacientes: List<Pair<String, String>>,
         private val onSelect: (String, String) -> Unit
@@ -230,7 +223,21 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val (uid, nombre) = pacientes[position]
             holder.tvNombre.text = nombre
-            holder.itemView.setOnClickListener { onSelect(uid, nombre) }
+            holder.itemView.setOnClickListener {
+
+                onSelect(uid, nombre) }
+
+            holder.itemView.setOnLongClickListener {
+                MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("⚠️ Desvincular Paciente")
+                    .setMessage("¿Estás seguro de que deseas dejar de monitorizar a $nombre?")
+                    .setNegativeButton("Cancelar", null)
+                    .setPositiveButton("Sí, desvincular") { _, _ ->
+                        desvincularPacienteDeLaNube(uid, nombre)
+                    }
+                    .show()
+                true
+            }
         }
         override fun getItemCount() = pacientes.size
     }
