@@ -14,7 +14,6 @@ import com.azahara.proyecto_final_azahara.model.MedicamentoConHorarios
 
 sealed class MedicationListItem {
     data class Header(val titulo: String) : MedicationListItem()
-    // 1. Actualizamos el ítem para que reciba la nueva estructura compuesta
     data class Item(val medicamentoWrapper: MedicamentoConHorarios) : MedicationListItem()
 }
 
@@ -68,18 +67,18 @@ class MedicationAdapter(
             is MedicationListItem.Item -> {
                 val itemHolder = holder as MedicationViewHolder
 
-                // 2. Desempaquetamos la entidad base y sus horarios
                 val wrapper = elemento.medicamentoWrapper
                 val med = wrapper.medicamento
                 val listaHoras = wrapper.horarios
 
                 itemHolder.tvNombre.text = med.nombre
-                itemHolder.tvMensaje.text = if (med.mensajePersonalizado.isBlank()) "Sin descripción" else med.mensajePersonalizado
 
-                // 3. Unimos los objetos HorarioMedicamento en un solo String visual
+                // CORREGIDO: Mostramos la descripción y abajo, entre corchetes, quién lo dio de alta
+                val descripcionBase = if (med.mensajePersonalizado.isBlank()) "Sin descripción" else med.mensajePersonalizado
+                itemHolder.tvMensaje.text = "$descripcionBase\n[${med.creadoPorNombre}]"
+
                 val horasTexto = listaHoras.joinToString(", ") { it.horaToma }
 
-                // Puesto que ya no tienes diaEspecifico, mostramos solo la frecuencia general
                 val detalleCalendario = when (med.frecuencia) {
                     "Semanal" -> " - Semanal"
                     "Mensual" -> " - Mensual"

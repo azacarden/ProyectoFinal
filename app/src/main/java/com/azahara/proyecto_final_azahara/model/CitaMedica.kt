@@ -1,4 +1,3 @@
-// app/src/main/java/com/azahara/proyecto_final_azahara/model/CitaMedica.kt
 package com.azahara.proyecto_final_azahara.model
 
 import androidx.room.Entity
@@ -7,11 +6,12 @@ import java.util.UUID
 
 @Entity(tableName = "citas_medicas")
 data class CitaMedica(
-    @PrimaryKey val id: String = UUID.randomUUID().toString(), // Garantiza un ID seguro antes de sincronizar con Firebase
+    @PrimaryKey val id: String = UUID.randomUUID().toString(),
     val motivo: String,
     val medico: String,
-    val especialidad: String,  // Nuevo
+    val especialidad: String,
     val fechaHora: Long,
     val notas: String,
-    val recordatorioPrevio: Int
+    val recordatorioPrevio: Int,
+    val creadoPorNombre: String = "Paciente"
 )

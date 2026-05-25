@@ -22,7 +22,6 @@ import kotlinx.coroutines.launch
 
 class AppointmentHistoryFragment : Fragment(R.layout.fragment_appointment_history) {
 
-    // 1. Conexión del ciclo oficial de Android con la factoría de repositorios
     private val viewModel: AppointmentViewModel by viewModels {
         object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -40,22 +39,36 @@ class AppointmentHistoryFragment : Fragment(R.layout.fragment_appointment_histor
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        val pacienteUid = arguments?.getString("PACIENTE_UID")
+
+        // ¡NUEVO! Escucha activa también en el historial para el Cuidador
+        if (pacienteUid != null) {
+            val firestore = FirebaseFirestore.getInstance()
+            val repoSync = AppointmentRepository(AppDatabase.getDatabase(requireContext()).citaMedicaDao(), firestore)
+            viewLifecycleOwner.lifecycleScope.launch {
+                repoSync.escucharCitasPaciente(pacienteUid).collect {}
+            }
+        }
+
         val rvPastCitas = view.findViewById<RecyclerView>(R.id.rvPastCitas)
 
         adapter = AppointmentAdapter(
             lista = emptyList(),
             onBorrarClick = { cita ->
-                // 2. Obtenemos el ID unificado para borrar el elemento de Firestore de forma precisa
                 val prefs = requireContext().getSharedPreferences("SesionUsuario", android.content.Context.MODE_PRIVATE)
-                val miUid = prefs.getString("firebase_uid", "") ?: ""
+                val miUidLocal = prefs.getString("firebase_uid", "") ?: ""
+                val targetUid = pacienteUid ?: miUidLocal
 
                 AlarmHelper(requireContext()).cancelarAlarmaCita(cita)
-                viewModel.borrarCita(cita, miUid)
+                viewModel.borrarCita(cita, targetUid)
                 Toast.makeText(requireContext(), "Cita eliminada del historial", Toast.LENGTH_SHORT).show()
             },
             onItemClick = { cita ->
                 val bundle = Bundle().apply {
                     putString("CITA_ID_EDITAR", cita.id)
+                    if (pacienteUid != null) {
+                        putString("PACIENTE_UID", pacienteUid)
+                    }
                 }
                 findNavController().navigate(R.id.action_appointmentList_to_addAppointment, bundle)
             }

@@ -7,5 +7,6 @@ data class CitaMedicaDTO(
     val especialidad: String = "",
     val fechaHora: Long = 0L,
     val notas: String = "",
-    val recordatorioPrevio: Int = 60
+    val recordatorioPrevio: Int = 60,
+    val creadoPorNombre: String = "Paciente"
 )

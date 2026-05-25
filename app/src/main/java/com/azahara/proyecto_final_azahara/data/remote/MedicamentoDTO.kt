@@ -8,5 +8,6 @@ data class MedicamentoDTO(
     val frecuencia: String = "Diaria",
     val diaEspecifico: String? = null,
     val urlProspecto: String? = null,
-    val contraindicaciones: String? = null
+    val contraindicaciones: String? = null,
+    val creadoPorNombre: String = "Paciente"
 )

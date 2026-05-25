@@ -181,10 +181,14 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
 
             // 2. Extraemos el UID alfanumérico seguro para asociar la cita en la nube
             val prefs = requireContext().getSharedPreferences("SesionUsuario", android.content.Context.MODE_PRIVATE)
-            val miUid = prefs.getString("firebase_uid", "") ?: ""
+            val miUidLocal = prefs.getString("firebase_uid", "") ?: ""
+            val miNombre = prefs.getString("usuario_identificado", "Paciente") ?: "Paciente"
+
+            // Redirección inteligente de carpeta cloud
+            val targetUid = arguments?.getString("PACIENTE_UID") ?: miUidLocal
 
             if (idCitaEditar == null) {
-                viewModel.guardarCita(motivo, medico, especialidad, calendarioCita.timeInMillis, notas, miUid)
+                viewModel.guardarCita(motivo, medico, especialidad, calendarioCita.timeInMillis, notas, targetUid, "Añadido por: $miNombre")
             } else {
                 val helper = AlarmHelper(requireContext())
                 val citaAntigua = CitaMedica(
@@ -198,7 +202,7 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
                 )
                 helper.cancelarAlarmaCita(citaAntigua)
 
-                viewModel.actualizarCita(idCitaEditar!!, motivo, medico, especialidad, calendarioCita.timeInMillis, notas, miUid)
+                viewModel.actualizarCita(idCitaEditar!!, motivo, medico, especialidad, calendarioCita.timeInMillis, notas, targetUid, "Añadido por: $miNombre")
             }
         }
 

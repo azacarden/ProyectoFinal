@@ -249,9 +249,12 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
 
     private fun realizarGuardado(nombre: String, hora: String, msg: String, freq: String, dia: String?) {
         val prefs = requireContext().getSharedPreferences("SesionUsuario", android.content.Context.MODE_PRIVATE)
-        // CORREGIDO: Ahora extraemos "firebase_uid" para pasárselo al repositorio
-        val miUsuarioUid = prefs.getString("firebase_uid", "") ?: ""
+        val miNombre = prefs.getString("usuario_identificado", "Paciente") ?: "Paciente"
+        val miUidLocal = prefs.getString("firebase_uid", "") ?: ""
 
-        viewModel.validarYGuardar(nombre, hora, msg, freq, dia, urlProspectoGuardada, contraindicacionesGuardadas, idMedEditar, miUsuarioUid)
+        // CORREGIDO: Si hay un PACIENTE_UID en los argumentos, guardamos en su carpeta; si no, en la mía.
+        val targetUid = arguments?.getString("PACIENTE_UID") ?: miUidLocal
+
+        viewModel.validarYGuardar(nombre, hora, msg, freq, dia, urlProspectoGuardada, contraindicacionesGuardadas, idMedEditar, targetUid, "Añadido por: $miNombre")
     }
 }

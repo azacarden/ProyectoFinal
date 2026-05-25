@@ -45,45 +45,34 @@ class AppointmentViewModel(
     }
 
     // CORREGIDO: Recibe el usuarioUid para impactar en Firestore
-    fun guardarCita(motivo: String, medico: String, especialidad: String, fechaHoraMilis: Long, notas: String, usuarioUid: String) {
+    // ... (Modifica las funciones guardarCita y actualizarCita para recibir la firma):
+    fun guardarCita(motivo: String, medico: String, especialidad: String, fechaHoraMilis: Long, notas: String, usuarioUid: String, creadoPor: String) {
         viewModelScope.launch {
             try {
                 val nuevaCita = CitaMedica(
-                    motivo = motivo,
-                    medico = medico,
-                    especialidad = especialidad,
-                    fechaHora = fechaHoraMilis,
-                    notas = notas,
-                    recordatorioPrevio = 60
+                    motivo = motivo, medico = medico, especialidad = especialidad,
+                    fechaHora = fechaHoraMilis, notas = notas, recordatorioPrevio = 60,
+                    creadoPorNombre = creadoPor // <--- NUEVO
                 )
                 appointmentRepository.guardarCita(nuevaCita, usuarioUid)
                 ultimaCitaGuardada = nuevaCita
                 _guardadoExitoso.value = true
-            } catch (e: Exception) {
-                _guardadoExitoso.value = false
-            }
+            } catch (e: Exception) { _guardadoExitoso.value = false }
         }
     }
 
-    // CORREGIDO: Recibe el usuarioUid para actualizar en Firestore
-    fun actualizarCita(id: String, motivo: String, medico: String, especialidad: String, fechaHoraMilis: Long, notas: String, usuarioUid: String) {
+    fun actualizarCita(id: String, motivo: String, medico: String, especialidad: String, fechaHoraMilis: Long, notas: String, usuarioUid: String, creadoPor: String) {
         viewModelScope.launch {
             try {
                 val citaModificada = CitaMedica(
-                    id = id,
-                    motivo = motivo,
-                    medico = medico,
-                    especialidad = especialidad,
-                    fechaHora = fechaHoraMilis,
-                    notas = notas,
-                    recordatorioPrevio = 60
+                    id = id, motivo = motivo, medico = medico, especialidad = especialidad,
+                    fechaHora = fechaHoraMilis, notas = notas, recordatorioPrevio = 60,
+                    creadoPorNombre = creadoPor // <--- NUEVO
                 )
                 appointmentRepository.guardarCita(citaModificada, usuarioUid)
                 ultimaCitaGuardada = citaModificada
                 _guardadoExitoso.value = true
-            } catch (e: Exception) {
-                _guardadoExitoso.value = false
-            }
+            } catch (e: Exception) { _guardadoExitoso.value = false }
         }
     }
 

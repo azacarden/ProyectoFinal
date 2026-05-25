@@ -77,7 +77,8 @@ class AddMedicationViewModel(
     fun validarYGuardar(
         nombre: String, horasTexto: String, mensaje: String, frecuencia: String,
         diaEspecifico: String?, url: String?, contra: String?, id: String?,
-        usuarioId: String // <- NUEVO PARÁMETRO
+        usuarioId: String,
+        creadoPorNombre: String
     ) {
         viewModelScope.launch {
             try {
@@ -94,7 +95,8 @@ class AddMedicationViewModel(
                 val nuevoMedicamento = Medicamento(
                     id = idFinal, nombre = nombre, mensajePersonalizado = mensaje,
                     frecuencia = frecuencia, diaEspecifico = diaEspecifico,
-                    urlProspecto = url, contraindicaciones = contra
+                    urlProspecto = url, contraindicaciones = contra,
+                    creadoPorNombre = creadoPorNombre // <--- NUEVO
                 )
 
                 val listaHorarios = horasTexto.split(",").mapNotNull { horaStr ->

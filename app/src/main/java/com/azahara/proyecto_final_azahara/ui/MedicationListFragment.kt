@@ -42,19 +42,15 @@ class MedicationListFragment : Fragment(R.layout.fragment_medication_list) {
         super.onViewCreated(view, savedInstanceState)
 
         val prefs = requireContext().getSharedPreferences("SesionUsuario", Context.MODE_PRIVATE)
-        // CORREGIDO: Leemos el UID alfanumérico para borrar
-        val miUsuarioUid = prefs.getString("firebase_uid", "") ?: ""
+        val miUsuarioId = prefs.getString("firebase_uid", "") ?: ""
 
         val pacienteUid = arguments?.getString("PACIENTE_UID")
         if (pacienteUid != null) {
-            Toast.makeText(requireContext(), "Sincronizando pastillas de $pacienteUid...", Toast.LENGTH_SHORT).show()
             val dao = AppDatabase.getDatabase(requireContext()).medicamentoDao()
             val repository = MedicationRepository(dao, FirebaseFirestore.getInstance())
 
             viewLifecycleOwner.lifecycleScope.launch {
-                repository.escucharMedicacionPaciente(pacienteUid).collect {
-                    // Actualización silenciosa en background
-                }
+                repository.escucharMedicacionPaciente(pacienteUid).collect {}
             }
         }
 
@@ -66,8 +62,9 @@ class MedicationListFragment : Fragment(R.layout.fragment_medication_list) {
                     val dao = AppDatabase.getDatabase(requireContext()).medicamentoDao()
                     val repository = MedicationRepository(dao, FirebaseFirestore.getInstance())
 
-                    // Extraemos el ID y nombre desde la entidad base
-                    repository.eliminarMedicamento(wrapper.medicamento.id, miUsuarioUid)
+                    // Borramos usando el ID de la carpeta cloud correcta
+                    val targetUid = pacienteUid ?: miUsuarioId
+                    repository.eliminarMedicamento(wrapper.medicamento.id, targetUid)
 
                     Toast.makeText(requireContext(), "${wrapper.medicamento.nombre} eliminado", Toast.LENGTH_SHORT).show()
                 }
@@ -75,6 +72,10 @@ class MedicationListFragment : Fragment(R.layout.fragment_medication_list) {
             onItemClick = { wrapper ->
                 val bundle = Bundle().apply {
                     putString("MEDICAMENTO_ID_EDITAR", wrapper.medicamento.id)
+                    // ¡CORREGIDO! Si somos cuidadores, arrastramos el ID del paciente al editar
+                    if (pacienteUid != null) {
+                        putString("PACIENTE_UID", pacienteUid)
+                    }
                 }
                 findNavController().navigate(R.id.action_medicationList_to_addMedication, bundle)
             },
@@ -88,7 +89,6 @@ class MedicationListFragment : Fragment(R.layout.fragment_medication_list) {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                // Ahora recolectamos MedicamentoConHorarios
                 viewModel.medicamentos.collect { listaPastillas ->
                     adapter.actualizarDatos(listaPastillas)
                 }

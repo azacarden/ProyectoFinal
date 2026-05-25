@@ -23,7 +23,6 @@ import kotlinx.coroutines.launch
 
 class AppointmentListFragment : Fragment(R.layout.fragment_appointment_list) {
 
-    // 1. Conexión del ciclo oficial de Android con la factoría de repositorios
     private val viewModel: AppointmentViewModel by viewModels {
         object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -41,23 +40,44 @@ class AppointmentListFragment : Fragment(R.layout.fragment_appointment_list) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // 1. CAPTURA DEL PACIENTE: Averiguamos si venimos rebotados del Dashboard del Cuidador
+        val pacienteUid = arguments?.getString("PACIENTE_UID")
+
+        // 2. ESCUCHA EN TIEMPO REAL: Si somos cuidadores monitorizando, activamos el oído en Firestore
+        if (pacienteUid != null) {
+            val firestore = FirebaseFirestore.getInstance()
+            val repoSync = AppointmentRepository(AppDatabase.getDatabase(requireContext()).citaMedicaDao(), firestore)
+            viewLifecycleOwner.lifecycleScope.launch {
+                // Cada cambio en las citas en Firebase se descargará automáticamente a Room
+                repoSync.escucharCitasPaciente(pacienteUid).collect {}
+            }
+        }
+
         val rvCitas = view.findViewById<RecyclerView>(R.id.rvCitas)
         val fabAddCita = view.findViewById<ExtendedFloatingActionButton>(R.id.fabAddCita)
 
         adapter = AppointmentAdapter(
             lista = emptyList(),
             onBorrarClick = { cita ->
-                // 2. Obtenemos el ID unificado para borrar el elemento de Firestore de forma precisa
+                // 3. DETERMINACIÓN DEL DESTINO CLOUD: ¿Borramos de mi perfil o del perfil del abuelo/paciente?
                 val prefs = requireContext().getSharedPreferences("SesionUsuario", android.content.Context.MODE_PRIVATE)
-                val miUid = prefs.getString("firebase_uid", "") ?: ""
+                val miUidLocal = prefs.getString("firebase_uid", "") ?: ""
+
+                val targetUid = pacienteUid ?: miUidLocal
 
                 AlarmHelper(requireContext()).cancelarAlarmaCita(cita)
-                viewModel.borrarCita(cita, miUid)
+
+                // Borramos usando el ID de la carpeta correcta en Firebase
+                viewModel.borrarCita(cita, targetUid)
                 Toast.makeText(requireContext(), "Cita eliminada", Toast.LENGTH_SHORT).show()
             },
             onItemClick = { cita ->
+                // 4. EDICIÓN CON TRAZABILIDAD: Pasamos el ID de la cita y arrastramos el UID del paciente
                 val bundle = Bundle().apply {
                     putString("CITA_ID_EDITAR", cita.id)
+                    if (pacienteUid != null) {
+                        putString("PACIENTE_UID", pacienteUid)
+                    }
                 }
                 findNavController().navigate(R.id.action_appointmentList_to_addAppointment, bundle)
             }
@@ -65,7 +85,12 @@ class AppointmentListFragment : Fragment(R.layout.fragment_appointment_list) {
         rvCitas.adapter = adapter
 
         fabAddCita.setOnClickListener {
-            findNavController().navigate(R.id.action_appointmentList_to_addAppointment)
+            val bundle = Bundle().apply {
+                if (pacienteUid != null) {
+                    putString("PACIENTE_UID", pacienteUid)
+                }
+            }
+            findNavController().navigate(R.id.action_appointmentList_to_addAppointment, bundle)
         }
 
         viewLifecycleOwner.lifecycleScope.launch {

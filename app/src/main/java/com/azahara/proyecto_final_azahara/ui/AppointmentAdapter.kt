@@ -15,7 +15,7 @@ import java.util.Locale
 class AppointmentAdapter(
     private var lista: List<CitaMedica> = emptyList(),
     private val onBorrarClick: (CitaMedica) -> Unit,
-    private val onItemClick: (CitaMedica) -> Unit // <-- NUEVO: Para editar
+    private val onItemClick: (CitaMedica) -> Unit
 ) : RecyclerView.Adapter<AppointmentAdapter.AppointmentViewHolder>() {
 
     class AppointmentViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -23,7 +23,7 @@ class AppointmentAdapter(
         val tvMotivo: TextView = view.findViewById(R.id.tvMotivoItem)
         val tvFechaHora: TextView = view.findViewById(R.id.tvFechaHoraItem)
         val btnBorrar: ImageButton = view.findViewById(R.id.btnBorrarCita)
-        val vistaTarjeta: View = view // Capturamos la tarjeta entera
+        val vistaTarjeta: View = view
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AppointmentViewHolder {
@@ -35,7 +35,8 @@ class AppointmentAdapter(
         val item = lista[position]
 
         holder.tvEspecialista.text = "${item.medico} - ${item.especialidad}"
-        holder.tvMotivo.text = item.motivo
+
+        holder.tvMotivo.text = "${item.motivo} (${item.creadoPorNombre})"
 
         val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
         holder.tvFechaHora.text = sdf.format(Date(item.fechaHora))
