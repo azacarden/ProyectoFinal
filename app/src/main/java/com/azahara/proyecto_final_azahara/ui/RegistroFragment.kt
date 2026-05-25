@@ -92,15 +92,13 @@ class RegistroFragment : Fragment(R.layout.fragment_registro) {
 
                             val prefs = requireContext().getSharedPreferences("SesionUsuario", android.content.Context.MODE_PRIVATE)
                             prefs.edit().apply {
+                                putString("firebase_uid", state.uid)
                                 putString("usuario_identificado", state.nombreUsuario)
                                 putString("rol_usuario", state.rol)
                                 apply()
                             }
 
-                            Toast.makeText(requireContext(), "Cuenta registrada: ${state.nombreUsuario}", Toast.LENGTH_SHORT).show()
-
                             viewModel.resetState()
-
                             findNavController().navigate(R.id.dashboardFragment)
                         }
                         is AuthState.Error -> {

@@ -19,7 +19,7 @@ class MedicationRepository(
     private val firestore: FirebaseFirestore
 ) {
     fun obtenerMedicamentosActivos(): Flow<List<MedicamentoConHorarios>> {
-        return medicamentoDao.getAllMedicamentosConHorarios()
+        return medicamentoDao.getAllMedicamentosConHorariosActivos()
     }
 
     suspend fun guardarMedicamento(
@@ -27,39 +27,47 @@ class MedicationRepository(
         usuarioId: String
     ): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            medicamentoDao.insertMedicamentoConHorarios(
-                medicamentoConHorarios.medicamento,
-                medicamentoConHorarios.horarios
+            // 1. Guardamos en local forzando la bandera de PENDIENTE
+            val medOffline = medicamentoConHorarios.medicamento.copy(
+                pendienteSincronizacion = true,
+                marcadoParaEliminar = false
             )
+            medicamentoDao.insertMedicamentoConHorarios(medOffline, medicamentoConHorarios.horarios)
 
+            // 2. Intentamos subir a la nube
             val dto = MedicamentoDTO(
-                idLocal = medicamentoConHorarios.medicamento.id,
-                nombre = medicamentoConHorarios.medicamento.nombre,
-                mensajePersonalizado = medicamentoConHorarios.medicamento.mensajePersonalizado,
+                idLocal = medOffline.id,
+                nombre = medOffline.nombre,
+                mensajePersonalizado = medOffline.mensajePersonalizado,
                 horarios = medicamentoConHorarios.horarios.map { it.horaToma },
-                frecuencia = medicamentoConHorarios.medicamento.frecuencia,
-                diaEspecifico = medicamentoConHorarios.medicamento.diaEspecifico,
-                urlProspecto = medicamentoConHorarios.medicamento.urlProspecto,
-                contraindicaciones = medicamentoConHorarios.medicamento.contraindicaciones
+                frecuencia = medOffline.frecuencia,
+                diaEspecifico = medOffline.diaEspecifico,
+                urlProspecto = medOffline.urlProspecto,
+                contraindicaciones = medOffline.contraindicaciones
             )
 
             firestore.collection("usuarios")
                 .document(usuarioId)
                 .collection("medicamentos")
-                .document(medicamentoConHorarios.medicamento.id)
+                .document(medOffline.id)
                 .set(dto)
                 .await()
 
+            // 3. Si hay internet y triunfa, le quitamos la etiqueta de pendiente
+            medicamentoDao.updateEstadoSincronizacion(medOffline.id, false)
             Result.success(Unit)
         } catch (e: Exception) {
-            Result.failure(Exception("Error al guardar el medicamento: ${e.localizedMessage}"))
+            // FALLO SILENCIOSO: Se queda en Room. El usuario no sufre interrupciones.
+            Result.success(Unit)
         }
     }
 
     suspend fun eliminarMedicamento(medicamentoId: String, usuarioId: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            medicamentoDao.deleteMedicamentoPorId(medicamentoId)
+            // 1. Borrado Lógico en local (Desaparece de la vista al instante)
+            medicamentoDao.softDeleteMedicamento(medicamentoId)
 
+            // 2. Intentamos borrar en Firestore
             firestore.collection("usuarios")
                 .document(usuarioId)
                 .collection("medicamentos")
@@ -67,9 +75,24 @@ class MedicationRepository(
                 .delete()
                 .await()
 
+            // 3. Si triunfa en la nube, destruimos el registro local para siempre
+            medicamentoDao.deleteMedicamentoPorId(medicamentoId)
             Result.success(Unit)
         } catch (e: Exception) {
-            Result.failure(Exception("Error al eliminar el medicamento: ${e.localizedMessage}"))
+            // FALLO SILENCIOSO: Sigue oculto localmente y marcado para eliminarse luego
+            Result.success(Unit)
+        }
+    }
+
+    // Nuevo motor de auto-reparación
+    suspend fun forzarSincronizacionPendientes(usuarioId: String) = withContext(Dispatchers.IO) {
+        val pendientes = medicamentoDao.obtenerPendientesDeSincronizar()
+        for (wrapper in pendientes) {
+            if (wrapper.medicamento.marcadoParaEliminar) {
+                eliminarMedicamento(wrapper.medicamento.id, usuarioId)
+            } else if (wrapper.medicamento.pendienteSincronizacion) {
+                guardarMedicamento(wrapper, usuarioId)
+            }
         }
     }
 
@@ -77,17 +100,11 @@ class MedicationRepository(
         val coleccionRef = firestore.collection("usuarios").document(pacienteUid).collection("medicamentos")
 
         val listener = coleccionRef.addSnapshotListener { snapshot, error ->
-            if (error != null) {
-                close(error)
-                return@addSnapshotListener
-            }
+            if (error != null) { close(error); return@addSnapshotListener }
 
             if (snapshot != null) {
                 kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
-                    val medicamentosNube = snapshot.documents.mapNotNull {
-                        it.toObject(MedicamentoDTO::class.java)
-                    }
-
+                    val medicamentosNube = snapshot.documents.mapNotNull { it.toObject(MedicamentoDTO::class.java) }
                     val nuevosMedicamentos = mutableListOf<Medicamento>()
                     val nuevosHorarios = mutableListOf<HorarioMedicamento>()
 
@@ -99,15 +116,15 @@ class MedicationRepository(
                             frecuencia = dto.frecuencia,
                             diaEspecifico = dto.diaEspecifico,
                             urlProspecto = dto.urlProspecto,
-                            contraindicaciones = dto.contraindicaciones
+                            contraindicaciones = dto.contraindicaciones,
+                            // Lo que viene de la nube está garantizado que no está pendiente
+                            pendienteSincronizacion = false,
+                            marcadoParaEliminar = false
                         )
                         nuevosMedicamentos.add(med)
 
-                        val horarios = dto.horarios.map { horaString ->
-                            HorarioMedicamento(
-                                medicamentoId = dto.idLocal,
-                                horaToma = horaString
-                            )
+                        val horarios = dto.horarios.map {
+                            HorarioMedicamento(medicamentoId = dto.idLocal, horaToma = it)
                         }
                         nuevosHorarios.addAll(horarios)
                     }
@@ -117,7 +134,6 @@ class MedicationRepository(
                 }
             }
         }
-
         awaitClose { listener.remove() }
     }
 }

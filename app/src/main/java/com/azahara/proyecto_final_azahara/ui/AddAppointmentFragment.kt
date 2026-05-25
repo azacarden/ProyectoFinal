@@ -9,7 +9,10 @@ import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
@@ -17,10 +20,12 @@ import com.azahara.proyecto_final_azahara.R
 import com.azahara.proyecto_final_azahara.alarm.AlarmHelper
 import com.azahara.proyecto_final_azahara.data.local.AppDatabase
 import com.azahara.proyecto_final_azahara.model.CitaMedica
+import com.azahara.proyecto_final_azahara.repository.AppointmentRepository
 import com.azahara.proyecto_final_azahara.viewmodel.AppointmentViewModel
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -31,12 +36,22 @@ import java.util.Locale
 
 class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
 
-    private lateinit var viewModel: AppointmentViewModel
+    // 1. Instanciación correcta del ViewModel a través de su Repositorio unificado
+    private val viewModel: AppointmentViewModel by viewModels {
+        object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                val dao = AppDatabase.getDatabase(requireContext()).citaMedicaDao()
+                val firestore = FirebaseFirestore.getInstance()
+                val repo = AppointmentRepository(dao, firestore)
+                @Suppress("UNCHECKED_CAST")
+                return AppointmentViewModel(dao, repo) as T
+            }
+        }
+    }
+
     private val calendarioCita = Calendar.getInstance()
     private var fechaSeleccionada = false
     private var horaSeleccionada = false
-
-    // CORREGIDO: Ahora es String nullable en lugar de Int
     private var idCitaEditar: String? = null
 
     private val opcionesRecordatorio = linkedMapOf(
@@ -50,11 +65,6 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val database = AppDatabase.getDatabase(requireContext())
-        val dao = database.citaMedicaDao()
-        viewModel = AppointmentViewModel(dao)
-
-        // CORREGIDO: Leemos un String del Bundle
         idCitaEditar = arguments?.getString("CITA_ID_EDITAR")
 
         val tvTituloPantalla = view.findViewById<TextView>(R.id.tvTituloAddCita)
@@ -77,19 +87,18 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
         actvReminder.setOnItemClickListener { parent, _, position, _ ->
             val selectedText = parent.getItemAtPosition(position).toString()
             val value = opcionesRecordatorio[selectedText]
-
             if (value == -1) {
                 mostrarDialogoPersonalizado(actvReminder)
             }
         }
 
-        // CORREGIDO: Verificamos si no es null
         if (idCitaEditar != null) {
             tvTituloPantalla.text = "Modificar Cita Médica"
             btnGuardar.text = "Guardar Cambios"
 
             viewLifecycleOwner.lifecycleScope.launch {
-                val cita = withContext(Dispatchers.IO) { dao.getCitaById(idCitaEditar!!) }
+                val daoLectura = AppDatabase.getDatabase(requireContext()).citaMedicaDao()
+                val cita = withContext(Dispatchers.IO) { daoLectura.getCitaById(idCitaEditar!!) }
                 cita?.let {
                     etMotivo.setText(it.motivo)
                     etMedico.setText(it.medico)
@@ -170,12 +179,16 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
                 return@setOnClickListener
             }
 
+            // 2. Extraemos el UID alfanumérico seguro para asociar la cita en la nube
+            val prefs = requireContext().getSharedPreferences("SesionUsuario", android.content.Context.MODE_PRIVATE)
+            val miUid = prefs.getString("firebase_uid", "") ?: ""
+
             if (idCitaEditar == null) {
-                viewModel.guardarCita(motivo, medico, especialidad, calendarioCita.timeInMillis, notas)
+                viewModel.guardarCita(motivo, medico, especialidad, calendarioCita.timeInMillis, notas, miUid)
             } else {
                 val helper = AlarmHelper(requireContext())
                 val citaAntigua = CitaMedica(
-                    id = idCitaEditar!!, // <- CORREGIDO
+                    id = idCitaEditar!!,
                     motivo = "",
                     medico = "",
                     especialidad = "",
@@ -185,7 +198,7 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
                 )
                 helper.cancelarAlarmaCita(citaAntigua)
 
-                viewModel.actualizarCita(idCitaEditar!!, motivo, medico, especialidad, calendarioCita.timeInMillis, notas)
+                viewModel.actualizarCita(idCitaEditar!!, motivo, medico, especialidad, calendarioCita.timeInMillis, notas, miUid)
             }
         }
 
@@ -196,7 +209,7 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
                         Toast.makeText(requireContext(), "Cita procesada correctamente", Toast.LENGTH_SHORT).show()
 
                         viewModel.ultimaCitaGuardada?.let { cita ->
-                            com.azahara.proyecto_final_azahara.alarm.AlarmHelper(requireContext()).programarAlarmaCita(cita)
+                            AlarmHelper(requireContext()).programarAlarmaCita(cita)
                         }
 
                         viewModel.resetearEstado()

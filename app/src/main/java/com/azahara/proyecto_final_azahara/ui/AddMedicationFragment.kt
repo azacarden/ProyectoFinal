@@ -19,12 +19,14 @@ import com.azahara.proyecto_final_azahara.alarm.AlarmHelper
 import com.azahara.proyecto_final_azahara.data.local.AppDatabase
 import com.azahara.proyecto_final_azahara.data.network.RetrofitClient
 import com.azahara.proyecto_final_azahara.repository.CimaRepository
+import com.azahara.proyecto_final_azahara.repository.MedicationRepository
 import com.azahara.proyecto_final_azahara.viewmodel.AddMedicationViewModel
 import com.azahara.proyecto_final_azahara.viewmodel.CimaUiState
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
@@ -36,11 +38,11 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
     private val viewModel: AddMedicationViewModel by viewModels {
         object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                val database = AppDatabase.getDatabase(requireContext())
-                val dao = database.medicamentoDao()
-                val repository = CimaRepository(RetrofitClient.cimaApi)
+                val dao = AppDatabase.getDatabase(requireContext()).medicamentoDao()
+                val cimaRepo = CimaRepository(RetrofitClient.cimaApi)
+                val medRepo = MedicationRepository(dao, FirebaseFirestore.getInstance())
                 @Suppress("UNCHECKED_CAST")
-                return AddMedicationViewModel(repository, dao) as T
+                return AddMedicationViewModel(cimaRepo, medRepo, dao) as T
             }
         }
     }
@@ -246,6 +248,10 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
     }
 
     private fun realizarGuardado(nombre: String, hora: String, msg: String, freq: String, dia: String?) {
-        viewModel.validarYGuardar(nombre, hora, msg, freq, dia, urlProspectoGuardada, contraindicacionesGuardadas, idMedEditar)
+        val prefs = requireContext().getSharedPreferences("SesionUsuario", android.content.Context.MODE_PRIVATE)
+        // CORREGIDO: Ahora extraemos "firebase_uid" para pasárselo al repositorio
+        val miUsuarioUid = prefs.getString("firebase_uid", "") ?: ""
+
+        viewModel.validarYGuardar(nombre, hora, msg, freq, dia, urlProspectoGuardada, contraindicacionesGuardadas, idMedEditar, miUsuarioUid)
     }
 }

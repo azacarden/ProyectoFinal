@@ -9,49 +9,53 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface MedicamentoDao {
 
-    // 1. Operaciones básicas de inserción
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMedicamento(medicamento: Medicamento)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertHorarios(horarios: List<HorarioMedicamento>)
 
-    // 2. Transacción atómica: Guarda el medicamento y sus horarios juntos
     @Transaction
     suspend fun insertMedicamentoConHorarios(medicamento: Medicamento, horarios: List<HorarioMedicamento>) {
         insertMedicamento(medicamento)
         insertHorarios(horarios)
     }
 
-    // 3. Consultas de lectura combinadas
     @Transaction
-    @Query("SELECT * FROM medicamentos")
-    fun getAllMedicamentosConHorarios(): Flow<List<MedicamentoConHorarios>>
+    @Query("SELECT * FROM medicamentos WHERE marcadoParaEliminar = 0")
+    fun getAllMedicamentosConHorariosActivos(): Flow<List<MedicamentoConHorarios>>
 
     @Transaction
     @Query("SELECT * FROM medicamentos WHERE id = :id LIMIT 1")
     fun getMedicamentoConHorariosPorId(id: String): Flow<MedicamentoConHorarios?>
 
-    // 4. Operaciones de borrado
     @Query("DELETE FROM medicamentos WHERE id = :id")
     suspend fun deleteMedicamentoPorId(id: String)
 
-    // 5. Operaciones masivas (útil para la sincronización desde la nube)
+    @Query("UPDATE medicamentos SET pendienteSincronizacion = :estado WHERE id = :id")
+    suspend fun updateEstadoSincronizacion(id: String, estado: Boolean)
+
+    @Query("UPDATE medicamentos SET marcadoParaEliminar = 1 WHERE id = :id")
+    suspend fun softDeleteMedicamento(id: String)
+
+    @Transaction
+    @Query("SELECT * FROM medicamentos WHERE pendienteSincronizacion = 1 OR marcadoParaEliminar = 1")
+    suspend fun obtenerPendientesDeSincronizar(): List<MedicamentoConHorarios>
+
     @Transaction
     suspend fun reemplazarTodosLosMedicamentos(
         nuevosMedicamentos: List<Medicamento>,
         nuevosHorarios: List<HorarioMedicamento>
     ) {
-        vaciarTabla()
         nuevosMedicamentos.forEach { insertMedicamento(it) }
+        nuevosMedicamentos.forEach { deleteHorariosPorMedicamento(it.id) }
         insertHorarios(nuevosHorarios)
     }
 
-    @Query("DELETE FROM medicamentos")
-    suspend fun vaciarTabla()
+    @Query("DELETE FROM horarios_medicamento WHERE medicamentoId = :medId")
+    suspend fun deleteHorariosPorMedicamento(medId: String)
 
-    // Síncrono para operaciones en segundo plano (Alarmas y Validaciones)
     @Transaction
-    @Query("SELECT * FROM medicamentos")
+    @Query("SELECT * FROM medicamentos WHERE marcadoParaEliminar = 0")
     suspend fun obtenerTodosLosMedicamentosConHorariosSync(): List<MedicamentoConHorarios>
 }

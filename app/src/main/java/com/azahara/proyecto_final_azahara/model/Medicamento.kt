@@ -12,5 +12,7 @@ data class Medicamento(
     val frecuencia: String = "Diaria",
     val diaEspecifico: String? = null,
     val urlProspecto: String? = null,
-    val contraindicaciones: String? = null
+    val contraindicaciones: String? = null,
+    val pendienteSincronizacion: Boolean = false,
+    val marcadoParaEliminar: Boolean = false
 )

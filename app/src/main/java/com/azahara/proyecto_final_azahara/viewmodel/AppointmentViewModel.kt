@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.azahara.proyecto_final_azahara.data.local.CitaMedicaDao
 import com.azahara.proyecto_final_azahara.model.CitaMedica
+import com.azahara.proyecto_final_azahara.repository.AppointmentRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -11,7 +12,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class AppointmentViewModel(private val citaDao: CitaMedicaDao) : ViewModel() {
+class AppointmentViewModel(
+    private val citaDao: CitaMedicaDao,
+    private val appointmentRepository: AppointmentRepository // Inyectamos el repositorio
+) : ViewModel() {
 
     private val _guardadoExitoso = MutableStateFlow<Boolean?>(null)
     val guardadoExitoso: StateFlow<Boolean?> = _guardadoExitoso.asStateFlow()
@@ -40,7 +44,8 @@ class AppointmentViewModel(private val citaDao: CitaMedicaDao) : ViewModel() {
         return null
     }
 
-    fun guardarCita(motivo: String, medico: String, especialidad: String, fechaHoraMilis: Long, notas: String) {
+    // CORREGIDO: Recibe el usuarioUid para impactar en Firestore
+    fun guardarCita(motivo: String, medico: String, especialidad: String, fechaHoraMilis: Long, notas: String, usuarioUid: String) {
         viewModelScope.launch {
             try {
                 val nuevaCita = CitaMedica(
@@ -51,12 +56,8 @@ class AppointmentViewModel(private val citaDao: CitaMedicaDao) : ViewModel() {
                     notas = notas,
                     recordatorioPrevio = 60
                 )
-                // CORREGIDO: Insertamos directamente. El UUID de la cita ya está generado.
-                citaDao.insertCita(nuevaCita)
-
-                // Asignamos la cita intacta
+                appointmentRepository.guardarCita(nuevaCita, usuarioUid)
                 ultimaCitaGuardada = nuevaCita
-
                 _guardadoExitoso.value = true
             } catch (e: Exception) {
                 _guardadoExitoso.value = false
@@ -64,7 +65,8 @@ class AppointmentViewModel(private val citaDao: CitaMedicaDao) : ViewModel() {
         }
     }
 
-    fun actualizarCita(id: String, motivo: String, medico: String, especialidad: String, fechaHoraMilis: Long, notas: String) {
+    // CORREGIDO: Recibe el usuarioUid para actualizar en Firestore
+    fun actualizarCita(id: String, motivo: String, medico: String, especialidad: String, fechaHoraMilis: Long, notas: String, usuarioUid: String) {
         viewModelScope.launch {
             try {
                 val citaModificada = CitaMedica(
@@ -76,7 +78,7 @@ class AppointmentViewModel(private val citaDao: CitaMedicaDao) : ViewModel() {
                     notas = notas,
                     recordatorioPrevio = 60
                 )
-                citaDao.updateCita(citaModificada)
+                appointmentRepository.guardarCita(citaModificada, usuarioUid)
                 ultimaCitaGuardada = citaModificada
                 _guardadoExitoso.value = true
             } catch (e: Exception) {
@@ -85,8 +87,8 @@ class AppointmentViewModel(private val citaDao: CitaMedicaDao) : ViewModel() {
         }
     }
 
-    fun borrarCita(cita: CitaMedica) {
-        viewModelScope.launch { citaDao.deleteCita(cita) }
+    fun borrarCita(cita: CitaMedica, usuarioUid: String) {
+        viewModelScope.launch { appointmentRepository.eliminarCita(cita, usuarioUid) }
     }
 
     fun resetearEstado() { _guardadoExitoso.value = null }

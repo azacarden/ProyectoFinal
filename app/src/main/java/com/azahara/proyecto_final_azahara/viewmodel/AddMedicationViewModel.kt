@@ -9,6 +9,7 @@ import com.azahara.proyecto_final_azahara.model.HorarioMedicamento
 import com.azahara.proyecto_final_azahara.model.MedicamentoConHorarios
 import com.azahara.proyecto_final_azahara.repository.CimaRepository
 import com.azahara.proyecto_final_azahara.repository.MedicamentoDetalle
+import com.azahara.proyecto_final_azahara.repository.MedicationRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,6 +27,7 @@ sealed interface CimaUiState {
 
 class AddMedicationViewModel(
     private val repository: CimaRepository,
+    private val medicationRepository: MedicationRepository,
     private val medicamentoDao: MedicamentoDao
 ) : ViewModel() {
 
@@ -73,14 +75,9 @@ class AddMedicationViewModel(
 // ... (resto de importaciones e inicio de la clase igual)
 
     fun validarYGuardar(
-        nombre: String,
-        horasTexto: String,
-        mensaje: String,
-        frecuencia: String,
-        diaEspecifico: String?,
-        url: String?,
-        contra: String?,
-        id: String?
+        nombre: String, horasTexto: String, mensaje: String, frecuencia: String,
+        diaEspecifico: String?, url: String?, contra: String?, id: String?,
+        usuarioId: String // <- NUEVO PARÁMETRO
     ) {
         viewModelScope.launch {
             try {
@@ -95,28 +92,22 @@ class AddMedicationViewModel(
                 val idFinal = id ?: UUID.randomUUID().toString()
 
                 val nuevoMedicamento = Medicamento(
-                    id = idFinal,
-                    nombre = nombre,
-                    mensajePersonalizado = mensaje,
-                    frecuencia = frecuencia,
-                    diaEspecifico = diaEspecifico, // <- CORREGIDO: Ahora sí le pasamos el valor
-                    urlProspecto = url,
-                    contraindicaciones = contra
+                    id = idFinal, nombre = nombre, mensajePersonalizado = mensaje,
+                    frecuencia = frecuencia, diaEspecifico = diaEspecifico,
+                    urlProspecto = url, contraindicaciones = contra
                 )
 
                 val listaHorarios = horasTexto.split(",").mapNotNull { horaStr ->
                     val horaLimpia = horaStr.trim()
-                    if (horaLimpia.isNotEmpty()) {
-                        HorarioMedicamento(
-                            medicamentoId = idFinal,
-                            horaToma = horaLimpia
-                        )
-                    } else null
+                    if (horaLimpia.isNotEmpty()) HorarioMedicamento(medicamentoId = idFinal, horaToma = horaLimpia) else null
                 }
 
-                medicamentoDao.insertMedicamentoConHorarios(nuevoMedicamento, listaHorarios)
+                val wrapper = MedicamentoConHorarios(nuevoMedicamento, listaHorarios)
 
-                ultimoMedicamentoGuardado = MedicamentoConHorarios(nuevoMedicamento, listaHorarios)
+                // ¡CORREGIDO! Ya no usamos el DAO directamente. Usamos el súper-repositorio
+                medicationRepository.guardarMedicamento(wrapper, usuarioId)
+
+                ultimoMedicamentoGuardado = wrapper
                 _uiState.value = CimaUiState.SaveSuccess
             } catch (e: Exception) {
                 _uiState.value = CimaUiState.Error("Error al guardar: ${e.message}")

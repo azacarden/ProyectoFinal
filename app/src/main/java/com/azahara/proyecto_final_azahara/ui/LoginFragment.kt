@@ -72,17 +72,18 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
                         is AuthState.Idle -> pbLogin.visibility = View.GONE
                         is AuthState.Loading -> pbLogin.visibility = View.VISIBLE
                         is AuthState.Success -> {
-                            pbLogin.visibility = View.GONE
+                            pbLogin.visibility = View.GONE // pbRegistro en RegistroFragment
 
                             val prefs = requireContext().getSharedPreferences("SesionUsuario", android.content.Context.MODE_PRIVATE)
                             prefs.edit().apply {
+                                putString("firebase_uid", state.uid) // <--- ¡NUEVO! Guardamos el UID alfanumérico seguro
                                 putString("usuario_identificado", state.nombreUsuario)
                                 putString("rol_usuario", state.rol)
                                 apply()
                             }
 
                             viewModel.resetState()
-                            findNavController().navigate(R.id.action_login_to_dashboard)
+                            findNavController().navigate(R.id.dashboardFragment)
                         }
                         is AuthState.Error -> {
                             pbLogin.visibility = View.GONE

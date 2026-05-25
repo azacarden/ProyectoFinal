@@ -20,12 +20,52 @@ class UserRepository(
         return withContext(Dispatchers.IO) {
             try {
                 val hashBuscado = CryptoUtils.sha256(contrasenaPlana)
-                val usuarioEncontrado = usuarioDao.getUsuarioPorNombreSync(nombre)
+                var usuarioEncontrado = usuarioDao.getUsuarioPorNombreSync(nombre)
 
+                // 🛠️ MECANISMO DE RESCATE: Si el usuario no está en Room (Wipe de BD o nuevo dispositivo)
+                if (usuarioEncontrado == null) {
+                    try {
+                        // 1. Buscamos el perfil en Firestore por el nombre de usuario para obtener su correo
+                        val querySnapshot = firestore.collection("usuarios")
+                            .whereEqualTo("nombreUsuario", nombre)
+                            .get()
+                            .await()
+
+                        if (querySnapshot.isEmpty) {
+                            return@withContext Result.failure(Exception("El usuario no existe en el sistema."))
+                        }
+
+                        val documento = querySnapshot.documents.first()
+                        val correoReal = documento.getString("correo") ?: ""
+                        val rolReal = documento.getString("rol") ?: "Paciente"
+
+                        // 2. Validamos las credenciales contra Firebase Auth
+                        val authResult = firebaseAuth.signInWithEmailAndPassword(correoReal, contrasenaPlana).await()
+                        val firebaseUser = authResult.user
+
+                        if (firebaseUser != null) {
+                            // 3. El usuario es real. Lo descargamos y reconstruimos su Room local inmediatamente
+                            val nuevoUsuarioLocal = Usuario(
+                                nombreUsuario = nombre,
+                                correo = correoReal,
+                                contrasenaHash = hashBuscado, // Generamos su hash local
+                                rol = rolReal,
+                                firebaseUid = firebaseUser.uid
+                            )
+                            usuarioDao.insertUsuario(nuevoUsuarioLocal)
+                            usuarioEncontrado = nuevoUsuarioLocal
+                        }
+                    } catch (e: Exception) {
+                        return@withContext Result.failure(Exception("Usuario o contraseña incorrectos en la red."))
+                    }
+                }
+
+                // Verificación final de seguridad (Local u Offline)
                 if (usuarioEncontrado != null && usuarioEncontrado.contrasenaHash == hashBuscado) {
 
                     var usuarioActualizado = usuarioEncontrado
 
+                    // Si el usuario existía en Room pero se creó sin internet (no tiene uid de Firebase)
                     if (usuarioActualizado.firebaseUid == null) {
                         try {
                             val authResult = firebaseAuth.createUserWithEmailAndPassword(
@@ -50,10 +90,11 @@ class UserRepository(
                             android.util.Log.w("UserRepository", "Sincronización diferida en login fallida.")
                         }
                     } else {
+                        // Si ya está totalmente sincronizado, renovamos sesión en la nube de fondo si hay red
                         try {
                             firebaseAuth.signInWithEmailAndPassword(usuarioActualizado.correo, contrasenaPlana).await()
                         } catch (e: Exception) {
-                            android.util.Log.w("UserRepository", "No se pudo renovar token de Firebase. Mantenemos sesión local.")
+                            android.util.Log.w("UserRepository", "Mantenemos sesión puramente local (Offline mode).")
                         }
                     }
 
@@ -62,7 +103,7 @@ class UserRepository(
                     Result.failure(Exception("Usuario o contraseña incorrectos."))
                 }
             } catch (e: Exception) {
-                Result.failure(Exception("Error en la base de datos local: ${e.localizedMessage}"))
+                Result.failure(Exception("Error en el sistema de autenticación: ${e.localizedMessage}"))
             }
         }
     }

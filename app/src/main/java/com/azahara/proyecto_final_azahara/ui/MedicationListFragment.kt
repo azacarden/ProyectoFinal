@@ -42,7 +42,8 @@ class MedicationListFragment : Fragment(R.layout.fragment_medication_list) {
         super.onViewCreated(view, savedInstanceState)
 
         val prefs = requireContext().getSharedPreferences("SesionUsuario", Context.MODE_PRIVATE)
-        val miUsuarioId = prefs.getString("usuario_identificado", "") ?: ""
+        // CORREGIDO: Leemos el UID alfanumérico para borrar
+        val miUsuarioUid = prefs.getString("firebase_uid", "") ?: ""
 
         val pacienteUid = arguments?.getString("PACIENTE_UID")
         if (pacienteUid != null) {
@@ -66,7 +67,7 @@ class MedicationListFragment : Fragment(R.layout.fragment_medication_list) {
                     val repository = MedicationRepository(dao, FirebaseFirestore.getInstance())
 
                     // Extraemos el ID y nombre desde la entidad base
-                    repository.eliminarMedicamento(wrapper.medicamento.id, miUsuarioId)
+                    repository.eliminarMedicamento(wrapper.medicamento.id, miUsuarioUid)
 
                     Toast.makeText(requireContext(), "${wrapper.medicamento.nombre} eliminado", Toast.LENGTH_SHORT).show()
                 }
