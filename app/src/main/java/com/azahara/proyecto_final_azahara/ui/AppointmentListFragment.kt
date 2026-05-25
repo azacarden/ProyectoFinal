@@ -40,15 +40,13 @@ class AppointmentListFragment : Fragment(R.layout.fragment_appointment_list) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // 1. CAPTURA DEL PACIENTE: Averiguamos si venimos rebotados del Dashboard del Cuidador
         val pacienteUid = arguments?.getString("PACIENTE_UID")
+        val pacienteNombre = arguments?.getString("PACIENTE_NOMBRE")
 
-        // 2. ESCUCHA EN TIEMPO REAL: Si somos cuidadores monitorizando, activamos el oído en Firestore
         if (pacienteUid != null) {
             val firestore = FirebaseFirestore.getInstance()
             val repoSync = AppointmentRepository(AppDatabase.getDatabase(requireContext()).citaMedicaDao(), firestore)
             viewLifecycleOwner.lifecycleScope.launch {
-                // Cada cambio en las citas en Firebase se descargará automáticamente a Room
                 repoSync.escucharCitasPaciente(pacienteUid).collect {}
             }
         }
@@ -59,25 +57,19 @@ class AppointmentListFragment : Fragment(R.layout.fragment_appointment_list) {
         adapter = AppointmentAdapter(
             lista = emptyList(),
             onBorrarClick = { cita ->
-                // 3. DETERMINACIÓN DEL DESTINO CLOUD: ¿Borramos de mi perfil o del perfil del abuelo/paciente?
                 val prefs = requireContext().getSharedPreferences("SesionUsuario", android.content.Context.MODE_PRIVATE)
                 val miUidLocal = prefs.getString("firebase_uid", "") ?: ""
-
                 val targetUid = pacienteUid ?: miUidLocal
 
                 AlarmHelper(requireContext()).cancelarAlarmaCita(cita)
-
-                // Borramos usando el ID de la carpeta correcta en Firebase
                 viewModel.borrarCita(cita, targetUid)
                 Toast.makeText(requireContext(), "Cita eliminada", Toast.LENGTH_SHORT).show()
             },
             onItemClick = { cita ->
-                // 4. EDICIÓN CON TRAZABILIDAD: Pasamos el ID de la cita y arrastramos el UID del paciente
                 val bundle = Bundle().apply {
                     putString("CITA_ID_EDITAR", cita.id)
-                    if (pacienteUid != null) {
-                        putString("PACIENTE_UID", pacienteUid)
-                    }
+                    if (pacienteUid != null) putString("PACIENTE_UID", pacienteUid)
+                    if (pacienteNombre != null) putString("PACIENTE_NOMBRE", pacienteNombre)
                 }
                 findNavController().navigate(R.id.action_appointmentList_to_addAppointment, bundle)
             }
@@ -86,9 +78,8 @@ class AppointmentListFragment : Fragment(R.layout.fragment_appointment_list) {
 
         fabAddCita.setOnClickListener {
             val bundle = Bundle().apply {
-                if (pacienteUid != null) {
-                    putString("PACIENTE_UID", pacienteUid)
-                }
+                if (pacienteUid != null) putString("PACIENTE_UID", pacienteUid)
+                if (pacienteNombre != null) putString("PACIENTE_NOMBRE", pacienteNombre)
             }
             findNavController().navigate(R.id.action_appointmentList_to_addAppointment, bundle)
         }

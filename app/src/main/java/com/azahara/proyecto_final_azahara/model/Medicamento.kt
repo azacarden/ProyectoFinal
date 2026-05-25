@@ -15,5 +15,6 @@ data class Medicamento(
     val contraindicaciones: String? = null,
     val pendienteSincronizacion: Boolean = false,
     val marcadoParaEliminar: Boolean = false,
-    val creadoPorNombre: String = "Paciente"
+    val creadoPorNombre: String = "Paciente",
+    val pacienteNombre: String = ""
 )

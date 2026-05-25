@@ -45,9 +45,16 @@ class MedicationListFragment : Fragment(R.layout.fragment_medication_list) {
         val miUsuarioId = prefs.getString("firebase_uid", "") ?: ""
 
         val pacienteUid = arguments?.getString("PACIENTE_UID")
+        // 🛠️ ¡CORRECCIÓN!: Rescatamos el nombre del paciente del Dashboard
+        val pacienteNombre = arguments?.getString("PACIENTE_NOMBRE")
+
         if (pacienteUid != null) {
             val dao = AppDatabase.getDatabase(requireContext()).medicamentoDao()
             val repository = MedicationRepository(dao, FirebaseFirestore.getInstance())
+
+            viewLifecycleOwner.lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                dao.vaciarTabla()
+            }
 
             viewLifecycleOwner.lifecycleScope.launch {
                 repository.escucharMedicacionPaciente(pacienteUid).collect {}
@@ -62,7 +69,6 @@ class MedicationListFragment : Fragment(R.layout.fragment_medication_list) {
                     val dao = AppDatabase.getDatabase(requireContext()).medicamentoDao()
                     val repository = MedicationRepository(dao, FirebaseFirestore.getInstance())
 
-                    // Borramos usando el ID de la carpeta cloud correcta
                     val targetUid = pacienteUid ?: miUsuarioId
                     repository.eliminarMedicamento(wrapper.medicamento.id, targetUid)
 
@@ -72,10 +78,10 @@ class MedicationListFragment : Fragment(R.layout.fragment_medication_list) {
             onItemClick = { wrapper ->
                 val bundle = Bundle().apply {
                     putString("MEDICAMENTO_ID_EDITAR", wrapper.medicamento.id)
-                    // ¡CORREGIDO! Si somos cuidadores, arrastramos el ID del paciente al editar
-                    if (pacienteUid != null) {
-                        putString("PACIENTE_UID", pacienteUid)
-                    }
+                    if (pacienteUid != null) putString("PACIENTE_UID", pacienteUid)
+
+                    // 🛠️ ¡FUNDAMENTAL! Pasamos el nombre del paciente para que no se reescriba con el del Cuidador
+                    if (pacienteNombre != null) putString("PACIENTE_NOMBRE", pacienteNombre)
                 }
                 findNavController().navigate(R.id.action_medicationList_to_addMedication, bundle)
             },

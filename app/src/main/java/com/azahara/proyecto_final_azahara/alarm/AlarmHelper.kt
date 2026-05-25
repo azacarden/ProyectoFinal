@@ -27,6 +27,8 @@ class AlarmHelper(private val context: Context) {
                     putExtra("MED_NOMBRE", medicamento.nombre)
                     putExtra("MED_MENSAJE", medicamento.mensajePersonalizado)
                     putExtra("MED_ID", medicamento.id)
+                    // Enviamos el nombre del paciente para que el cuidador sepa de quién es
+                    putExtra("MED_PACIENTE", medicamento.pacienteNombre)
                 }
 
                 val requestCode = (medicamento.id.hashCode() * 31) + index
@@ -48,6 +50,8 @@ class AlarmHelper(private val context: Context) {
                     }
                 }
 
+                // 🛠️ CORRECCIÓN: Volvemos al método exacto para broadcasts invisibles.
+                // Esto hará que las notificaciones vuelvan a aparecer en el panel del teléfono.
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     alarmManager.setExactAndAllowWhileIdle(
                         AlarmManager.RTC_WAKEUP,
@@ -90,9 +94,9 @@ class AlarmHelper(private val context: Context) {
             putExtra("CITA_MOTIVO", cita.motivo)
             putExtra("CITA_MEDICO", cita.medico)
             putExtra("CITA_ID", cita.id)
+            putExtra("CITA_PACIENTE", cita.creadoPorNombre)
         }
 
-        // Usamos el hashcode del ID como identificador único de la alarma
         val requestCode = cita.id.hashCode()
 
         val pendingIntent = PendingIntent.getBroadcast(
@@ -102,11 +106,9 @@ class AlarmHelper(private val context: Context) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Calculamos en qué momento exacto debe sonar restando los minutos
         val milisegundosPrevios = cita.recordatorioPrevio * 60 * 1000L
         val tiempoAviso = cita.fechaHora - milisegundosPrevios
 
-        // Solo la programamos si ese momento de aviso aún no ha pasado
         if (tiempoAviso > System.currentTimeMillis()) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 alarmManager.setExactAndAllowWhileIdle(
@@ -140,6 +142,7 @@ class AlarmHelper(private val context: Context) {
             pendingIntent.cancel()
         }
     }
+
     fun programarAlarmaGeneral(alarma: com.azahara.proyecto_final_azahara.model.AlarmaGeneral) {
         val intent = Intent(context, AlarmReceiver::class.java).apply {
             putExtra("TIPO_ALARMA", "ALARMA_GENERAL")
@@ -148,7 +151,6 @@ class AlarmHelper(private val context: Context) {
             putExtra("GENERAL_ID", alarma.id)
         }
 
-        // El ID de AlarmaGeneral ya es un Int, así que lo usamos directamente
         val requestCode = alarma.id
 
         val pendingIntent = PendingIntent.getBroadcast(
@@ -158,7 +160,6 @@ class AlarmHelper(private val context: Context) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Solo la programamos si la hora seleccionada aún no ha pasado
         if (alarma.fechaHora > System.currentTimeMillis()) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 alarmManager.setExactAndAllowWhileIdle(

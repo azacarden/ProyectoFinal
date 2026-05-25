@@ -162,7 +162,6 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
             timePicker.show(parentFragmentManager, "TIME_PICKER")
         }
 
-        // 🛠️ ¡NUEVO UX! Al pulsar sobre el cuadro de horas, abrimos un menú para eliminar la hora errónea
         tvHorasSeleccionadas.setOnClickListener {
             if (listaHoras.isEmpty()) return@setOnClickListener
 
@@ -273,7 +272,8 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
         val miNombre = prefs.getString("usuario_identificado", "Paciente") ?: "Paciente"
         val miUidLocal = prefs.getString("firebase_uid", "") ?: ""
         val targetUid = arguments?.getString("PACIENTE_UID") ?: miUidLocal
+        val targetPacienteNombre = arguments?.getString("PACIENTE_NOMBRE") ?: miNombre
 
-        viewModel.validarYGuardar(nombre, hora, msg, freq, dia, urlProspectoGuardada, contraindicacionesGuardadas, idMedEditar, targetUid, "Añadido por: $miNombre")
+        viewModel.validarYGuardar(nombre, hora, msg, freq, dia, urlProspectoGuardada, contraindicacionesGuardadas, idMedEditar, targetUid, "Añadido por: $miNombre", targetPacienteNombre)
     }
 }

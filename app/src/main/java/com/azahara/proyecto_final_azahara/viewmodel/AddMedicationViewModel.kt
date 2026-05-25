@@ -72,13 +72,10 @@ class AddMedicationViewModel(
         return null
     }
 
-// ... (resto de importaciones e inicio de la clase igual)
-
     fun validarYGuardar(
         nombre: String, horasTexto: String, mensaje: String, frecuencia: String,
         diaEspecifico: String?, url: String?, contra: String?, id: String?,
-        usuarioId: String,
-        creadoPorNombre: String
+        usuarioId: String, creadoPorNombre: String, pacienteNombre: String
     ) {
         viewModelScope.launch {
             try {
@@ -92,11 +89,12 @@ class AddMedicationViewModel(
 
                 val idFinal = id ?: UUID.randomUUID().toString()
 
+                // ¡CORREGIDO! Cambiado diaSpecifico por diaEspecifico
                 val nuevoMedicamento = Medicamento(
                     id = idFinal, nombre = nombre, mensajePersonalizado = mensaje,
                     frecuencia = frecuencia, diaEspecifico = diaEspecifico,
                     urlProspecto = url, contraindicaciones = contra,
-                    creadoPorNombre = creadoPorNombre // <--- NUEVO
+                    creadoPorNombre = creadoPorNombre, pacienteNombre = pacienteNombre
                 )
 
                 val listaHorarios = horasTexto.split(",").mapNotNull { horaStr ->
@@ -106,7 +104,6 @@ class AddMedicationViewModel(
 
                 val wrapper = MedicamentoConHorarios(nuevoMedicamento, listaHorarios)
 
-                // ¡CORREGIDO! Ya no usamos el DAO directamente. Usamos el súper-repositorio
                 medicationRepository.guardarMedicamento(wrapper, usuarioId)
 
                 ultimoMedicamentoGuardado = wrapper

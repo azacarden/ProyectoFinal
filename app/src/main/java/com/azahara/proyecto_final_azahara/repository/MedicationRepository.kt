@@ -44,7 +44,8 @@ class MedicationRepository(
                 diaEspecifico = medOffline.diaEspecifico,
                 urlProspecto = medOffline.urlProspecto,
                 contraindicaciones = medOffline.contraindicaciones,
-                creadoPorNombre = medOffline.creadoPorNombre
+                creadoPorNombre = medOffline.creadoPorNombre,
+                pacienteNombre = medOffline.pacienteNombre
             )
 
             firestore.collection("usuarios")
@@ -120,7 +121,8 @@ class MedicationRepository(
                             contraindicaciones = dto.contraindicaciones,
                             pendienteSincronizacion = false,
                             marcadoParaEliminar = false,
-                            creadoPorNombre = dto.creadoPorNombre
+                            creadoPorNombre = dto.creadoPorNombre,
+                            pacienteNombre = dto.pacienteNombre
                         )
                         nuevosMedicamentos.add(med)
 

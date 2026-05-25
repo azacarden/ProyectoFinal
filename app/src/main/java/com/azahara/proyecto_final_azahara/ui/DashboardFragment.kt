@@ -11,15 +11,20 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.azahara.proyecto_final_azahara.R
+import com.azahara.proyecto_final_azahara.data.local.AppDatabase
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.firestore.FirebaseFirestore
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
 
@@ -30,6 +35,8 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
 
     private var pacienteSeleccionadoUid: String? = null
     private var pacienteSeleccionadoNombre: String? = null
+
+    private var avisoNotificacionesMostrado = false
 
     private lateinit var tvSaludo: TextView
     private lateinit var btnVolverPacientes: Button
@@ -80,35 +87,50 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
             evaluarLayoutPorEstados()
         }
 
+        // 🛠️ ASEGURAMOS QUE TODAS LAS RUTAS LLEVEN EL NOMBRE DEL PACIENTE
         view.findViewById<MaterialCardView>(R.id.cardMedicacion).setOnClickListener {
-            val bundle = Bundle().apply { putString("PACIENTE_UID", obtenerUidDestino()) }
+            val bundle = Bundle().apply {
+                putString("PACIENTE_UID", obtenerUidDestino())
+                putString("PACIENTE_NOMBRE", if (miRol == "Cuidador") pacienteSeleccionadoNombre else miUsuarioNombre)
+            }
             findNavController().navigate(R.id.action_dashboard_to_medicationList, bundle)
         }
 
         view.findViewById<MaterialCardView>(R.id.cardAdd).setOnClickListener {
-            val bundle = Bundle().apply { putString("PACIENTE_UID", obtenerUidDestino()) }
+            val bundle = Bundle().apply {
+                putString("PACIENTE_UID", obtenerUidDestino())
+                putString("PACIENTE_NOMBRE", if (miRol == "Cuidador") pacienteSeleccionadoNombre else miUsuarioNombre)
+            }
             findNavController().navigate(R.id.action_dashboard_to_addMedication, bundle)
         }
 
         view.findViewById<MaterialCardView>(R.id.cardHistorial).setOnClickListener {
-            val bundle = Bundle().apply { putString("PACIENTE_UID", obtenerUidDestino()) }
+            val bundle = Bundle().apply {
+                putString("PACIENTE_UID", obtenerUidDestino())
+                putString("PACIENTE_NOMBRE", if (miRol == "Cuidador") pacienteSeleccionadoNombre else miUsuarioNombre)
+            }
             findNavController().navigate(R.id.action_dashboard_to_appointmentHistory, bundle)
         }
 
         view.findViewById<MaterialCardView>(R.id.cardNuevaCita).setOnClickListener {
-            val bundle = Bundle().apply { putString("PACIENTE_UID", obtenerUidDestino()) }
+            val bundle = Bundle().apply {
+                putString("PACIENTE_UID", obtenerUidDestino())
+                putString("PACIENTE_NOMBRE", if (miRol == "Cuidador") pacienteSeleccionadoNombre else miUsuarioNombre)
+            }
             findNavController().navigate(R.id.action_dashboard_to_addAppointment, bundle)
         }
 
         view.findViewById<MaterialCardView>(R.id.cardCitas).setOnClickListener {
-            val bundle = Bundle().apply { putString("PACIENTE_UID", obtenerUidDestino()) }
+            val bundle = Bundle().apply {
+                putString("PACIENTE_UID", obtenerUidDestino())
+                putString("PACIENTE_NOMBRE", if (miRol == "Cuidador") pacienteSeleccionadoNombre else miUsuarioNombre)
+            }
             findNavController().navigate(R.id.action_dashboard_to_appointmentList, bundle)
         }
 
         view.findViewById<MaterialCardView>(R.id.cardCuidadores).setOnClickListener {
             val bundle = Bundle().apply {
                 putString("PACIENTE_UID", obtenerUidDestino())
-                // ¡AQUÍ ESTÁ EL CAMBIO! Añadimos el flag para diferenciar el origen si es Paciente
                 if (miRol == "Paciente") {
                     putString("ORIGEN", "CARD_CUIDADORES")
                 }
@@ -135,6 +157,8 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
 
                 ivIconoCuidadores.setImageResource(android.R.drawable.ic_menu_info_details)
                 tvTituloCuidadores.text = "Info Paciente"
+
+                comprobarTareasPendientesDeHoy()
             }
         } else {
             tvSaludo.text = "¡Hola, $miUsuarioNombre!\n¿Qué deseas hacer hoy?"
@@ -144,6 +168,47 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
 
             ivIconoCuidadores.setImageResource(android.R.drawable.ic_menu_share)
             tvTituloCuidadores.text = "Cuidadores"
+
+            comprobarTareasPendientesDeHoy()
+        }
+    }
+
+    // 🛠️ ¡CORREGIDO! Dispara una Notificación Push Real en el panel de Android
+    private fun comprobarTareasPendientesDeHoy() {
+        if (avisoNotificacionesMostrado) return
+
+        lifecycleScope.launch {
+            val dbLocal = AppDatabase.getDatabase(requireContext())
+
+            val tieneMedicinas = withContext(Dispatchers.IO) {
+                dbLocal.medicamentoDao().obtenerTodosLosMedicamentosConHorariosSync().isNotEmpty()
+            }
+
+            if (tieneMedicinas) {
+                avisoNotificacionesMostrado = true
+                val nombreSujeto = if (miRol == "Cuidador") pacienteSeleccionadoNombre else "tu planificación"
+
+                val notificationManager = requireContext().getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    val channel = android.app.NotificationChannel(
+                        "canal_general",
+                        "Avisos Generales",
+                        android.app.NotificationManager.IMPORTANCE_DEFAULT
+                    )
+                    notificationManager.createNotificationChannel(channel)
+                }
+
+                val notification = androidx.core.app.NotificationCompat.Builder(requireContext(), "canal_general")
+                    .setSmallIcon(android.R.drawable.ic_menu_agenda)
+                    .setContentTitle("🔔 Control Diario")
+                    .setContentText("Tienes tareas médicas pendientes hoy para $nombreSujeto.")
+                    .setPriority(androidx.core.app.NotificationCompat.PRIORITY_DEFAULT)
+                    .setAutoCancel(true)
+                    .build()
+
+                notificationManager.notify(999, notification) // Lanzamos el aviso al panel
+            }
         }
     }
 

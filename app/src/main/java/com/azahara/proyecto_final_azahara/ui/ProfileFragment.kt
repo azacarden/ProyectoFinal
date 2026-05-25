@@ -2,9 +2,8 @@ package com.azahara.proyecto_final_azahara.ui
 
 import android.graphics.Bitmap
 import android.os.Bundle
-import android.view.LayoutInflater
+import android.text.Html
 import android.view.View
-import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
@@ -17,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.azahara.proyecto_final_azahara.R
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.zxing.BarcodeFormat
 import com.journeyapps.barcodescanner.BarcodeEncoder
 
@@ -26,6 +26,9 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
     private var miUsuario = "Usuario_Local"
     private var miRol = "Paciente"
     private var miUid = ""
+
+    // Registro para poder limpiar el listener en tiempo real de Firebase al salir del fragment
+    private var vinculacionListener: ListenerRegistration? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -41,12 +44,11 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         val tvMiRol = view.findViewById<TextView>(R.id.tvMiRol)
         val btnCerrarSesion = view.findViewById<Button>(R.id.btnCerrarSesion)
 
-        // Limpieza de remanentes visuales
         view.findViewById<TextView>(R.id.tvTituloPacientes)?.visibility = View.GONE
         view.findViewById<RecyclerView>(R.id.rvPacientes)?.visibility = View.GONE
 
         val targetPacienteUid = arguments?.getString("PACIENTE_UID")
-        val origenVista = arguments?.getString("ORIGEN") // Capturamos la bandera oculta del Paciente
+        val origenVista = arguments?.getString("ORIGEN")
 
         btnCerrarSesion.setOnClickListener {
             MaterialAlertDialogBuilder(requireContext())
@@ -61,11 +63,10 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         }
 
         // ========================================================
-        // 🛠️ MOTOR DE SEGMENTACIÓN E INYECCIÓN DE VISTAS (UX/UI)
+        // 🛠️ MOTOR DE SEGMENTACIÓN CON ESTILOS EN NEGRITA (HTML)
         // ========================================================
         if (miRol == "Cuidador") {
             if (targetPacienteUid != null && targetPacienteUid != miUid) {
-                // MODO A: Cuidador inspeccionando la ficha del abuelo/paciente
                 view.findViewById<View>(R.id.cardQr)?.visibility = View.GONE
                 btnAccionDinamica.visibility = View.GONE
                 btnCerrarSesion.visibility = View.GONE
@@ -77,13 +78,21 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                             val correo = doc.getString("correo") ?: "No aportado"
                             val telefono = doc.getString("telefono") ?: "No registrado"
                             val emergencia = doc.getString("contactoEmergencia") ?: "No registrado"
+                            val nss = doc.getString("nss") ?: "No registrado"
 
                             tvTituloFragment.text = "Expediente de Salud"
-                            tvMiRol.text = "👤 Paciente: $nombre\n\n📧 Correo: $correo\n\n📞 Teléfono Personal: $telefono\n\n🚨 Contacto de Emergencia / Tutor: $emergencia"
+
+                            // 🛠️ ¡CORREGIDO UX! Etiquetas en negrita y valores normales usando HTML
+                            val htmlContenido = "<b>👤 Paciente:</b> $nombre<br><br>" +
+                                    "<b>📧 Correo:</b> $correo<br><br>" +
+                                    "<b>📞 Teléfono Personal:</b> $telefono<br><br>" +
+                                    "<b>🪪 Nº Seguridad Social:</b> $nss<br><br>" +
+                                    "<b>🚨 Emergencia / Tutor:</b> $emergencia"
+
+                            tvMiRol.text = Html.fromHtml(htmlContenido, Html.FROM_HTML_MODE_LEGACY)
                         }
                     }
             } else {
-                // MODO B: Perfil personal del propio Cuidador
                 view.findViewById<View>(R.id.cardQr)?.visibility = View.GONE
                 btnCerrarSesion.visibility = View.VISIBLE
                 tvTituloFragment.text = "Mi Cuenta (Cuidador)"
@@ -96,19 +105,16 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                 renderizarDatosPropiosLocal(tvMiRol)
             }
         } else {
-            // MODO C: EL PACIENTE LOGUEADO (DESDOBLAMIENTO DE INTERFAZ SOLICITADO)
             if (origenVista == "CARD_CUIDADORES") {
-                // MODO C.1: El paciente pulsa el botón "Cuidadores" del Dashboard
                 view.findViewById<View>(R.id.cardQr)?.visibility = View.VISIBLE
-                ivQrCode.setImageBitmap(generarQr(miUid)) // Solo aquí mostramos el QR para que le escaneen
+                ivQrCode.setImageBitmap(generarQr(miUid))
                 btnAccionDinamica.visibility = View.GONE
-                btnCerrarSesion.visibility = View.GONE // Ocultamos cerrar sesión para limpiar la vista
+                btnCerrarSesion.visibility = View.GONE
 
                 tvTituloFragment.text = "Mi Cuidador Asignado"
                 renderizarDatosDelCuidadorDelPaciente(tvMiRol)
             } else {
-                // MODO C.2: El paciente abre "Perfil" en la barra de navegación superior (Mi Cuenta)
-                view.findViewById<View>(R.id.cardQr)?.visibility = View.GONE // ¡OCULTADO EL QR!
+                view.findViewById<View>(R.id.cardQr)?.visibility = View.GONE
                 btnCerrarSesion.visibility = View.VISIBLE
                 tvTituloFragment.text = "Mi Perfil"
 
@@ -127,51 +133,66 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
             if (doc.exists()) {
                 val nombreCompleto = doc.getString("nombreCompleto") ?: "No registrado"
                 val tel = doc.getString("telefono") ?: "No registrado"
-                textView.text = "👤 Nombre: $nombreCompleto\n\n📧 Usuario: $miUsuario\n\n📞 Teléfono: $tel"
+
+                val html = "<b>👤 Nombre:</b> $nombreCompleto<br><br>" +
+                        "<b>📧 Usuario:</b> $miUsuario<br><br>" +
+                        "<b>📞 Teléfono:</b> $tel"
+                textView.text = Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY)
             }
         }
     }
 
-    // Renderiza la información del paciente (Nombre completo, teléfono y tutor/emergencia) sin QR
     private fun renderizarDatosPersonalesCompletosPaciente(textView: TextView) {
         db.collection("usuarios").document(miUid).get().addOnSuccessListener { doc ->
             if (doc.exists()) {
                 val nombreComp = doc.getString("nombreCompleto") ?: "No registrado"
                 val tel = doc.getString("telefono") ?: "No registrado"
                 val emg = doc.getString("contactoEmergencia") ?: "No registrado"
+                val nss = doc.getString("nss") ?: "No registrado" // 🛠️ NUEVO CAMPO NSS
 
-                textView.text = "👤 Nombre Completo: $nombreComp\n\n👤 Cuenta de Usuario: $miUsuario\n\n📞 Mi Teléfono: $tel\n\n🚨 Contacto Urgencia / Tutor Legal: $emg"
+                val html = "<b>👤 Nombre Completo:</b> $nombreComp<br><br>" +
+                        "<b>📧 Cuenta de Usuario:</b> $miUsuario<br><br>" +
+                        "<b>📞 Mi Teléfono:</b> $tel<br><br>" +
+                        "<b>🪪 Nº Seguridad Social:</b> $nss<br><br>" +
+                        "<b>🚨 Contacto Urgencia / Tutor Legal:</b> $emg"
+                textView.text = Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY)
             }
         }
     }
 
-    // Descarga y muestra los datos del cuidador asignado en la pestaña del QR
+    // 🛠️ ¡CORREGIDO UX EN TIEMPO REAL! Ahora usa un SnapshotListener para pintar al cuidador al instante
     private fun renderizarDatosDelCuidadorDelPaciente(textView: TextView) {
-        db.collection("vinculaciones").whereEqualTo("pacienteUid", miUid).get()
-            .addOnSuccessListener { snapshots ->
-                if (!snapshots.isEmpty) {
-                    val docVinculo = snapshots.documents.first()
-                    val cuidadorUid = docVinculo.getString("cuidadorUid") ?: ""
-
-                    db.collection("usuarios").document(cuidadorUid).get().addOnSuccessListener { docCuidador ->
-                        if (docCuidador.exists()) {
-                            val nombreC = docCuidador.getString("nombreCompleto") ?: docCuidador.getString("nombreUsuario") ?: "Cuidador"
-                            val telC = docCuidador.getString("telefono") ?: "No aportado"
-                            val correoC = docCuidador.getString("correo") ?: "No aportado"
-
-                            textView.text = "👤 Mi Cuidador: $nombreC\n\n📞 Teléfono: $telC\n\n📧 Correo: $correoC\n\n" +
-                                    "-----------------------------------------\n" +
-                                    "ℹ️ Si necesitas vincular a otro acompañante, pídele que escanee el código QR de arriba."
-                        }
-                    }
-                } else {
-                    textView.text = "⚠️ Actualmente no tienes ningún cuidador asignado.\n\n" +
+        vinculacionListener = db.collection("vinculaciones")
+            .whereEqualTo("pacienteUid", miUid)
+            .addSnapshotListener { snapshots, error ->
+                if (error != null || snapshots == null || snapshots.isEmpty) {
+                    val htmlVacio = "<b>⚠️ Estado:</b> Sin cuidador vinculado todavía.<br><br>" +
                             "👉 Muestra el código QR de arriba a tu cuidador o tutor legal para enlazar vuestras cuentas."
+                    textView.text = Html.fromHtml(htmlVacio, Html.FROM_HTML_MODE_LEGACY)
+                    return@addSnapshotListener
+                }
+
+                val docVinculo = snapshots.documents.first()
+                val cuidadorUid = docVinculo.getString("cuidadorUid") ?: ""
+                val cuidadorNombre = docVinculo.getString("cuidadorNombre") ?: "Asignado"
+
+                db.collection("usuarios").document(cuidadorUid).get().addOnSuccessListener { docCuidador ->
+                    if (docCuidador.exists()) {
+                        val nombreC = docCuidador.getString("nombreCompleto") ?: docCuidador.getString("nombreUsuario") ?: cuidadorNombre
+                        val telC = docCuidador.getString("telefono") ?: "No aportado"
+                        val correoC = docCuidador.getString("correo") ?: "No aportado"
+
+                        val htmlConCuidador = "<b>👤 Mi Cuidador:</b> $nombreC<br><br>" +
+                                "<b>📞 Teléfono:</b> $telC<br><br>" +
+                                "<b>📧 Correo:</b> $correoC<br><br>" +
+                                "-----------------------------------------<br>" +
+                                "<i>ℹ️ Puedes añadir a más cuidadores. Sólo deben escanear el QR.</i>"
+                        textView.text = Html.fromHtml(htmlConCuidador, Html.FROM_HTML_MODE_LEGACY)
+                    }
                 }
             }
     }
 
-    // Formulario inflado dinámicamente para rellenar los datos solicitados
     private fun mostrarDialogoModificarDatos(textViewActualizar: TextView) {
         val ctx = requireContext()
         val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
@@ -193,23 +214,31 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
             layoutParams = lp
         }
 
-        // Este edittext servirá como contacto de emergencia para pacientes, o se ocultará sutilmente si es cuidador
+        // 🛠️ NUEVO: Campo exclusivo para introducir el Número de la Seguridad Social (NSS)
+        val etNss = EditText(ctx).apply {
+            hint = "Número de la Seguridad Social"
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            layoutParams = lp
+            if (miRol == "Cuidador") visibility = View.GONE
+        }
+
         val etEmergencia = EditText(ctx).apply {
             hint = "Persona de contacto de emergencia / Tutor"
             inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_WORDS
             layoutParams = lp
-            if (miRol == "Cuidador") visibility = View.GONE // Los cuidadores no lo necesitan obligatoriamente
+            if (miRol == "Cuidador") visibility = View.GONE
         }
 
         contenedorProgramatico.addView(etNombreCompleto)
         contenedorProgramatico.addView(etTelefono)
+        contenedorProgramatico.addView(etNss) // Inyectamos el NSS en la vista
         contenedorProgramatico.addView(etEmergencia)
 
-        // Precarga de los datos vigentes en la nube
         db.collection("usuarios").document(miUid).get().addOnSuccessListener { doc ->
             if (doc.exists()) {
                 etNombreCompleto.setText(doc.getString("nombreCompleto") ?: "")
                 etTelefono.setText(doc.getString("telefono") ?: "")
+                etNss.setText(doc.getString("nss") ?: "")
                 etEmergencia.setText(doc.getString("contactoEmergencia") ?: "")
             }
         }
@@ -221,6 +250,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
             .setPositiveButton("Guardar") { _, _ ->
                 val nuevoNom = etNombreCompleto.text.toString().trim()
                 val nuevoTel = etTelefono.text.toString().trim()
+                val nuevoNss = etNss.text.toString().trim()
                 val nuevoEmg = etEmergencia.text.toString().trim()
 
                 if (nuevoNom.isBlank() || nuevoTel.isBlank()) {
@@ -231,6 +261,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                 val mapaDatos = hashMapOf<String, Any>(
                     "nombreCompleto" to nuevoNom,
                     "telefono" to nuevoTel,
+                    "nss" to nuevoNss, // Guardamos el NSS en Firebase
                     "contactoEmergencia" to nuevoEmg
                 )
 
@@ -250,6 +281,12 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                     }
             }
             .show()
+    }
+
+    override fun onDestroyView() {
+        // Limpieza del listener en tiempo real al destruir la vista para evitar fugas de memoria
+        vinculacionListener?.remove()
+        super.onDestroyView()
     }
 
     private fun generarQr(contenido: String): Bitmap? {
