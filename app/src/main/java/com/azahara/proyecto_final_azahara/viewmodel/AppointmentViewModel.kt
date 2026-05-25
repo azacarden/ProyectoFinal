@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 
 class AppointmentViewModel(
     private val citaDao: CitaMedicaDao,
-    private val appointmentRepository: AppointmentRepository // Inyectamos el repositorio
+    private val appointmentRepository: AppointmentRepository // Inyecta el repositorio
 ) : ViewModel() {
 
     private val _guardadoExitoso = MutableStateFlow<Boolean?>(null)
@@ -44,8 +44,8 @@ class AppointmentViewModel(
         return null
     }
 
-    // CORREGIDO: Recibe el usuarioUid para impactar en Firestore
-    // ... (Modifica las funciones guardarCita y actualizarCita para recibir la firma):
+    // Recibe el usuarioUid para impactar en Firestore
+    // Modifica las funciones guardarCita y actualizarCita para recibir la firma
     fun guardarCita(motivo: String, medico: String, especialidad: String, fechaHoraMilis: Long, notas: String, usuarioUid: String, creadoPor: String) {
         viewModelScope.launch {
             try {

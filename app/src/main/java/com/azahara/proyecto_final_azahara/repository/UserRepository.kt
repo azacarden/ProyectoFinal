@@ -22,10 +22,10 @@ class UserRepository(
                 val hashBuscado = CryptoUtils.sha256(contrasenaPlana)
                 var usuarioEncontrado = usuarioDao.getUsuarioPorNombreSync(nombre)
 
-                // 🛠️ MECANISMO DE RESCATE: Si el usuario no está en Room (Wipe de BD o nuevo dispositivo)
+                // Si el usuario no está en Room
                 if (usuarioEncontrado == null) {
                     try {
-                        // 1. Buscamos el perfil en Firestore por el nombre de usuario para obtener su correo
+                        // Busca el perfil en Firestore por el nombre de usuario para obtener su correo
                         val querySnapshot = firestore.collection("usuarios")
                             .whereEqualTo("nombreUsuario", nombre)
                             .get()
@@ -39,12 +39,12 @@ class UserRepository(
                         val correoReal = documento.getString("correo") ?: ""
                         val rolReal = documento.getString("rol") ?: "Paciente"
 
-                        // 2. Validamos las credenciales contra Firebase Auth
+                        // Valida las credenciales contra Firebase Auth
                         val authResult = firebaseAuth.signInWithEmailAndPassword(correoReal, contrasenaPlana).await()
                         val firebaseUser = authResult.user
 
                         if (firebaseUser != null) {
-                            // 3. El usuario es real. Lo descargamos y reconstruimos su Room local inmediatamente
+                            // El usuario es real. Lo descarga de Firestore y reconstruye su Room local inmediatamente
                             val nuevoUsuarioLocal = Usuario(
                                 nombreUsuario = nombre,
                                 correo = correoReal,
@@ -90,7 +90,7 @@ class UserRepository(
                             android.util.Log.w("UserRepository", "Sincronización diferida en login fallida.")
                         }
                     } else {
-                        // Si ya está totalmente sincronizado, renovamos sesión en la nube de fondo si hay red
+                        // Si ya está totalmente sincronizado, renueva sesión en la nube de fondo si hay red
                         try {
                             firebaseAuth.signInWithEmailAndPassword(usuarioActualizado.correo, contrasenaPlana).await()
                         } catch (e: Exception) {

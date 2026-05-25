@@ -27,14 +27,14 @@ class MedicationRepository(
         usuarioId: String
     ): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            // 1. Guardamos en local forzando la bandera de PENDIENTE
+
             val medOffline = medicamentoConHorarios.medicamento.copy(
                 pendienteSincronizacion = true,
                 marcadoParaEliminar = false
             )
             medicamentoDao.insertMedicamentoConHorarios(medOffline, medicamentoConHorarios.horarios)
 
-            // 2. Intentamos subir a la nube
+
             val dto = MedicamentoDTO(
                 idLocal = medOffline.id,
                 nombre = medOffline.nombre,
@@ -55,21 +55,21 @@ class MedicationRepository(
                 .set(dto)
                 .await()
 
-            // 3. Si hay internet y triunfa, le quitamos la etiqueta de pendiente
+            // Si hay internet se elimina la tarjeta de pendiente (es invisible al usuario)
             medicamentoDao.updateEstadoSincronizacion(medOffline.id, false)
             Result.success(Unit)
         } catch (e: Exception) {
-            // FALLO SILENCIOSO: Se queda en Room. El usuario no sufre interrupciones.
+            // Fallo silencioso: Se queda en Room. El usuario no sufre interrupciones.
             Result.success(Unit)
         }
     }
 
     suspend fun eliminarMedicamento(medicamentoId: String, usuarioId: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            // 1. Borrado Lógico en local (Desaparece de la vista al instante)
+            // Borrado Lógico en local (Desaparece de la vista al instante)
             medicamentoDao.softDeleteMedicamento(medicamentoId)
 
-            // 2. Intentamos borrar en Firestore
+            // Intenta borrar en Firestore
             firestore.collection("usuarios")
                 .document(usuarioId)
                 .collection("medicamentos")
@@ -77,16 +77,15 @@ class MedicationRepository(
                 .delete()
                 .await()
 
-            // 3. Si triunfa en la nube, destruimos el registro local para siempre
+            // Si funciona en la nube, destruye el registro local para siempre
             medicamentoDao.deleteMedicamentoPorId(medicamentoId)
             Result.success(Unit)
         } catch (e: Exception) {
-            // FALLO SILENCIOSO: Sigue oculto localmente y marcado para eliminarse luego
+            // Fallo silencioso: Sigue oculto localmente y marcado para eliminarse luego
             Result.success(Unit)
         }
     }
 
-    // Nuevo motor de auto-reparación
     suspend fun forzarSincronizacionPendientes(usuarioId: String) = withContext(Dispatchers.IO) {
         val pendientes = medicamentoDao.obtenerPendientesDeSincronizar()
         for (wrapper in pendientes) {

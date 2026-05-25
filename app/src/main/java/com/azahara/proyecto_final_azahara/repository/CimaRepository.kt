@@ -6,7 +6,6 @@ import com.azahara.proyecto_final_azahara.data.network.MedicamentoBasicoDto
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-// 1. Modificamos el modelo para reflejar lo que tú has pedido
 data class MedicamentoDetalle(
     val nregistro: String,
     val nombre: String,
@@ -23,18 +22,19 @@ class CimaRepository(private val api: CimaApi) {
         }
     }
 
-    // Le pasamos el objeto entero para poder sacar sus vías y su prospecto
+    // Le pasamos el objeto entero para poder sacar las vías de administracion y su prospecto
     suspend fun obtenerDetalleCompleto(medicamento: MedicamentoBasicoDto): MedicamentoDetalle {
         return withContext(Dispatchers.IO) {
 
-            // Juntamos las vías (Ej: VÍA ORAL)
+            // Juntamos las vías
             val vias = medicamento.viasAdministracion?.joinToString(", ") { it.nombre }
 
-            // Buscamos el documento tipo "2" (El prospecto) y sacamos su enlace web
+            // Buscamos el el prospecto y muestra su enlace web
             val prospectoUrl = medicamento.docs?.find { it.tipo == 2 }?.let { it.urlHtml ?: it.url }
 
             try {
-                // Buscamos las contraindicaciones (Sección 4.3 de la AEMPS)
+                // Buscamos las contraindicaciones en la ficha técnica digitalizada
+                // A día de hoy CIMA no tiene apenas nada digitalizado. Esto será útil a futuro
                 val secciones = api.getFichaTecnica(medicamento.nregistro)
                 val contraindicaciones = secciones.find { it.seccion == "4.3" }?.contenido
                 if (contraindicaciones.isNullOrBlank()) {

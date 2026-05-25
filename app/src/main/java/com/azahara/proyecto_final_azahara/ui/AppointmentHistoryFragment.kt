@@ -41,7 +41,6 @@ class AppointmentHistoryFragment : Fragment(R.layout.fragment_appointment_histor
 
         val pacienteUid = arguments?.getString("PACIENTE_UID")
 
-        // ¡NUEVO! Escucha activa también en el historial para el Cuidador
         if (pacienteUid != null) {
             val firestore = FirebaseFirestore.getInstance()
             val repoSync = AppointmentRepository(AppDatabase.getDatabase(requireContext()).citaMedicaDao(), firestore)

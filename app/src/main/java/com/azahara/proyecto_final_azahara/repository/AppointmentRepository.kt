@@ -54,7 +54,6 @@ class AppointmentRepository(
         }
     }
 
-    // NUEVO MOTOR: Escucha activa de citas para el Cuidador
     fun escucharCitasPaciente(pacienteUid: String): Flow<Boolean> = callbackFlow {
         val coleccionRef = firestore.collection("usuarios").document(pacienteUid).collection("citas")
 

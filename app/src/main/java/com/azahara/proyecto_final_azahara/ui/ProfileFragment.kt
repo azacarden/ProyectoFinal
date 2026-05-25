@@ -62,9 +62,9 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                 .show()
         }
 
-        // ========================================================
-        // 🛠️ MOTOR DE SEGMENTACIÓN CON ESTILOS EN NEGRITA (HTML)
-        // ========================================================
+
+        // Aquí he usado html para el estilo de negrita del perfil
+
         if (miRol == "Cuidador") {
             if (targetPacienteUid != null && targetPacienteUid != miUid) {
                 view.findViewById<View>(R.id.cardQr)?.visibility = View.GONE
@@ -82,7 +82,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
 
                             tvTituloFragment.text = "Expediente de Salud"
 
-                            // 🛠️ ¡CORREGIDO UX! Etiquetas en negrita y valores normales usando HTML
+                            // Etiquetas en negrita y valores normales usando HTML
                             val htmlContenido = "<b>👤 Paciente:</b> $nombre<br><br>" +
                                     "<b>📧 Correo:</b> $correo<br><br>" +
                                     "<b>📞 Teléfono Personal:</b> $telefono<br><br>" +
@@ -148,7 +148,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                 val nombreComp = doc.getString("nombreCompleto") ?: "No registrado"
                 val tel = doc.getString("telefono") ?: "No registrado"
                 val emg = doc.getString("contactoEmergencia") ?: "No registrado"
-                val nss = doc.getString("nss") ?: "No registrado" // 🛠️ NUEVO CAMPO NSS
+                val nss = doc.getString("nss") ?: "No registrado"
 
                 val html = "<b>👤 Nombre Completo:</b> $nombreComp<br><br>" +
                         "<b>📧 Cuenta de Usuario:</b> $miUsuario<br><br>" +
@@ -160,7 +160,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         }
     }
 
-    // 🛠️ ¡CORREGIDO UX EN TIEMPO REAL! Ahora usa un SnapshotListener para pintar al cuidador al instante
+    // Usam SnapshotListener para pintar al cuidador al instante
     private fun renderizarDatosDelCuidadorDelPaciente(textView: TextView) {
         vinculacionListener = db.collection("vinculaciones")
             .whereEqualTo("pacienteUid", miUid)
@@ -214,7 +214,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
             layoutParams = lp
         }
 
-        // 🛠️ NUEVO: Campo exclusivo para introducir el Número de la Seguridad Social (NSS)
+        // Campo exclusivo para introducir el Número de la Seguridad Social (NSS)
         val etNss = EditText(ctx).apply {
             hint = "Número de la Seguridad Social"
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
@@ -231,7 +231,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
 
         contenedorProgramatico.addView(etNombreCompleto)
         contenedorProgramatico.addView(etTelefono)
-        contenedorProgramatico.addView(etNss) // Inyectamos el NSS en la vista
+        contenedorProgramatico.addView(etNss)
         contenedorProgramatico.addView(etEmergencia)
 
         db.collection("usuarios").document(miUid).get().addOnSuccessListener { doc ->

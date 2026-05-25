@@ -139,7 +139,7 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
                     if (it.horarios.isNotEmpty()) {
                         listaHoras.clear()
                         listaHoras.addAll(it.horarios.map { horario -> horario.horaToma })
-                        tvHorasSeleccionadas.text = "Horas (Toca para eliminar): ${listaHoras.joinToString(", ")}"
+                        tvHorasSeleccionadas.text = "Horas. Pulsa si quieres eliminar algun horario: ${listaHoras.joinToString(", ")}"
                     }
                 }
             }
@@ -156,7 +156,7 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
                 if (!listaHoras.contains(horaFormateada)) {
                     listaHoras.add(horaFormateada)
                     listaHoras.sort()
-                    tvHorasSeleccionadas.text = "Horas (Toca para eliminar): ${listaHoras.joinToString(", ")}"
+                    tvHorasSeleccionadas.text = "Horas. Pulsa si quieres eliminar algun horario: ${listaHoras.joinToString(", ")}"
                 }
             }
             timePicker.show(parentFragmentManager, "TIME_PICKER")
@@ -175,9 +175,9 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
                     if (listaHoras.isEmpty()) {
                         tvHorasSeleccionadas.text = "Ninguna hora seleccionada todavía"
                     } else {
-                        tvHorasSeleccionadas.text = "Horas (Toca para eliminar): ${listaHoras.joinToString(", ")}"
+                        tvHorasSeleccionadas.text = "Horas. Pulsa si quieres eliminar algun horario: ${listaHoras.joinToString(", ")}"
                     }
-                    Toast.makeText(requireContext(), "Hora $horaEliminar quitada", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Hora $horaEliminar eliminada", Toast.LENGTH_SHORT).show()
                 }
                 .setNegativeButton("Cancelar", null)
                 .show()
@@ -192,7 +192,7 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
             val mensaje = etMensaje.text.toString().trim()
 
             if (listaHoras.isEmpty()) {
-                Toast.makeText(requireContext(), "Por favor, añade al menos una hora de toma", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Por favor, debes añadir al menos una hora de toma", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 

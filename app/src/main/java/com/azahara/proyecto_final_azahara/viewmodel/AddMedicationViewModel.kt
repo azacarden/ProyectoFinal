@@ -88,8 +88,6 @@ class AddMedicationViewModel(
                 }
 
                 val idFinal = id ?: UUID.randomUUID().toString()
-
-                // ¡CORREGIDO! Cambiado diaSpecifico por diaEspecifico
                 val nuevoMedicamento = Medicamento(
                     id = idFinal, nombre = nombre, mensajePersonalizado = mensaje,
                     frecuencia = frecuencia, diaEspecifico = diaEspecifico,

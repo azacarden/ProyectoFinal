@@ -22,7 +22,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // ANDROID 13+ (Permisos de Notificación)
+        // Permisos de notificación
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(
@@ -33,16 +33,16 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // 1. Configuramos el Header (Toolbar)
+        // Configuración para el Header (Toolbar)
         val toolbar = findViewById<MaterialToolbar>(R.id.topAppBar)
         setSupportActionBar(toolbar)
 
-        // 2. Conectamos la navegación
+        // Conecta la navegación
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         navController = navHostFragment.navController
 
-        // 3. REQUISITO TÉCNICO: Lógica de visibilidad y flecha de retroceso
+        // Lógica de visibilidad y flecha de retroceso
         navController.addOnDestinationChangedListener { _, destination, _ ->
             when (destination.id) {
                 R.id.loginFragment, R.id.registroFragment -> {
@@ -60,18 +60,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * 🛠️ CORRECCIÓN PASO 1: Le decimos a la Activity que infle el menú en el Header
-     */
+
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.top_app_bar_menu, menu)
         return true
     }
 
-    /**
-     * 🛠️ CORRECCIÓN PASO 2: Capturamos los clics de Perfil y Ajustes usando el ciclo oficial
-     * (Asegúrate de que los IDs coincidan exactamente con tu top_app_bar_menu.xml)
-     */
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.action_perfil_menu -> {

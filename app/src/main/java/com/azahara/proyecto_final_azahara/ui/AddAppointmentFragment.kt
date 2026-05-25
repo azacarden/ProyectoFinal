@@ -36,7 +36,7 @@ import java.util.Locale
 
 class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
 
-    // 1. Instanciación correcta del ViewModel a través de su Repositorio unificado
+    // Instanciación correcta del ViewModel a través de su Repositorio unificado
     private val viewModel: AppointmentViewModel by viewModels {
         object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -179,7 +179,7 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
                 return@setOnClickListener
             }
 
-            // 2. Extraemos el UID alfanumérico seguro para asociar la cita en la nube
+            // Extraemos el UID alfanumérico seguro para asociar la cita en la nube
             val prefs = requireContext().getSharedPreferences("SesionUsuario", android.content.Context.MODE_PRIVATE)
             val miUidLocal = prefs.getString("firebase_uid", "") ?: ""
             val miNombre = prefs.getString("usuario_identificado", "Paciente") ?: "Paciente"

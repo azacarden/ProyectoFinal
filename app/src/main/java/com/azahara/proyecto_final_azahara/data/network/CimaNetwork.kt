@@ -7,7 +7,6 @@ import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
 import retrofit2.http.Query
 
-// --- NUEVAS ESTRUCTURAS PARA VÍAS Y PROSPECTO ---
 data class ViaAdministracionDto(
     @SerializedName("nombre") val nombre: String
 )
@@ -26,7 +25,6 @@ data class MedicamentoBasicoDto(
     @SerializedName("nregistro") val nregistro: String,
     @SerializedName("nombre") val nombre: String,
     @SerializedName("labtitular") val labtitular: String,
-    // Añadimos estas dos listas para poder cogerlas directamente en la búsqueda
     @SerializedName("viasAdministracion") val viasAdministracion: List<ViaAdministracionDto>?,
     @SerializedName("docs") val docs: List<DocumentoDto>?
 )
@@ -37,14 +35,12 @@ data class SeccionDocDto(
     @SerializedName("contenido") val contenido: String
 )
 
-// --- INTERFAZ DE ENDPOINTS ---
 interface CimaApi {
     @GET("medicamentos")
     suspend fun buscarMedicamentos(
         @Query("nombre") nombre: String
     ): MedicamentosResponse
 
-    // Volvemos a la lista original, sin la caja
     @GET("docSegmentado/contenido/1")
     suspend fun getFichaTecnica(
         @Query("nregistro") nregistro: String
@@ -55,7 +51,7 @@ interface CimaApi {
 object RetrofitClient {
     private const val BASE_URL = "https://cima.aemps.es/cima/rest/"
 
-    // 1. Creamos un traductor Gson "relajado" que no choque con el formato del CIMA
+    // Aquí se crea un traductor Gson que no choque con el formato del CIMA
     private val gson = GsonBuilder()
         .setLenient()
         .create()

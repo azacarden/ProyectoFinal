@@ -30,7 +30,6 @@ import java.util.Locale
 
 class AddGeneralAlarmFragment : Fragment(R.layout.fragment_add_general_alarm) {
 
-    // CORREGIDO: Usamos la factoría
     private val viewModel: GeneralAlarmViewModel by viewModels {
         object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {

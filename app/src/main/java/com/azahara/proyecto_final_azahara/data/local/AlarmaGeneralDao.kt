@@ -15,7 +15,6 @@ interface AlarmaGeneralDao {
     @Query("SELECT * FROM alarmas_generales")
     fun obtenerTodasLasAlarmas(): kotlinx.coroutines.flow.Flow<List<AlarmaGeneral>>
 
-    // ¡Añadimos la función que faltaba para que el modo edición pueda buscar la alarma por su ID!
     @Query("SELECT * FROM alarmas_generales WHERE id = :id")
     suspend fun getAlarmaById(id: Int): AlarmaGeneral?
 

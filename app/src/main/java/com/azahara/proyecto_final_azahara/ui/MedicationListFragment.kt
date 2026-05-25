@@ -43,9 +43,7 @@ class MedicationListFragment : Fragment(R.layout.fragment_medication_list) {
 
         val prefs = requireContext().getSharedPreferences("SesionUsuario", Context.MODE_PRIVATE)
         val miUsuarioId = prefs.getString("firebase_uid", "") ?: ""
-
         val pacienteUid = arguments?.getString("PACIENTE_UID")
-        // 🛠️ ¡CORRECCIÓN!: Rescatamos el nombre del paciente del Dashboard
         val pacienteNombre = arguments?.getString("PACIENTE_NOMBRE")
 
         if (pacienteUid != null) {
@@ -80,7 +78,7 @@ class MedicationListFragment : Fragment(R.layout.fragment_medication_list) {
                     putString("MEDICAMENTO_ID_EDITAR", wrapper.medicamento.id)
                     if (pacienteUid != null) putString("PACIENTE_UID", pacienteUid)
 
-                    // 🛠️ ¡FUNDAMENTAL! Pasamos el nombre del paciente para que no se reescriba con el del Cuidador
+                    // Le pasamos el nombre del paciente para que no se reescriba con el del Cuidador
                     if (pacienteNombre != null) putString("PACIENTE_NOMBRE", pacienteNombre)
                 }
                 findNavController().navigate(R.id.action_medicationList_to_addMedication, bundle)

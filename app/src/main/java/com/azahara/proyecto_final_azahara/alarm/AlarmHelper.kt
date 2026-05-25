@@ -27,7 +27,6 @@ class AlarmHelper(private val context: Context) {
                     putExtra("MED_NOMBRE", medicamento.nombre)
                     putExtra("MED_MENSAJE", medicamento.mensajePersonalizado)
                     putExtra("MED_ID", medicamento.id)
-                    // Enviamos el nombre del paciente para que el cuidador sepa de quién es
                     putExtra("MED_PACIENTE", medicamento.pacienteNombre)
                 }
 
@@ -50,7 +49,7 @@ class AlarmHelper(private val context: Context) {
                     }
                 }
 
-                // 🛠️ CORRECCIÓN: Volvemos al método exacto para broadcasts invisibles.
+                // Vuelve al metodo exacto para broadcasts invisibles.
                 // Esto hará que las notificaciones vuelvan a aparecer en el panel del teléfono.
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     alarmManager.setExactAndAllowWhileIdle(

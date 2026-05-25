@@ -26,7 +26,6 @@ import kotlinx.coroutines.launch
 
 class LoginFragment : Fragment(R.layout.fragment_login) {
 
-    // CORREGIDO: Usamos la factoría para construir el ViewModel con sus dependencias
     private val viewModel: AuthViewModel by viewModels {
         object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -76,7 +75,7 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
 
                             val prefs = requireContext().getSharedPreferences("SesionUsuario", android.content.Context.MODE_PRIVATE)
                             prefs.edit().apply {
-                                putString("firebase_uid", state.uid) // <--- ¡NUEVO! Guardamos el UID alfanumérico seguro
+                                putString("firebase_uid", state.uid) //Guardamos el UID alfanumérico seguro
                                 putString("usuario_identificado", state.nombreUsuario)
                                 putString("rol_usuario", state.rol)
                                 apply()

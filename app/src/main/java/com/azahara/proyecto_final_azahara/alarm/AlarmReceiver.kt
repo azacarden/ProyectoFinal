@@ -24,7 +24,7 @@ class AlarmReceiver : BroadcastReceiver() {
             val tituloFinal: String
             val mensajeFinal: String
 
-            // 🛠️ NOTIFICACIÓN EXPLÍCITA PARA CUIDADORES MULTIPACIENTE
+            // Notificación para cuando el cuidador tenga más de un paciente asociado
             if (miRolActual == "Cuidador" && paciente.isNotEmpty() && paciente != miNombre && paciente != "Paciente") {
                 tituloFinal = "💊 Paciente: $paciente"
                 mensajeFinal = "Toma requerida: $nombre\nNotas: $mensaje"

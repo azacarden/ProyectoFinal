@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 
 class PreferencesManager(context: Context) {
-    // Creamos un archivo XML oculto en el móvil llamado "ajustes_accesibilidad"
+    // Crea un archivo XML oculto en el móvil llamado "ajustes_accesibilidad"
     private val prefs: SharedPreferences = context.getSharedPreferences("ajustes_accesibilidad", Context.MODE_PRIVATE)
 
     var textoGrande: Boolean

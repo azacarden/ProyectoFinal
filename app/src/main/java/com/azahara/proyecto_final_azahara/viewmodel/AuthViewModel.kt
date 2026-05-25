@@ -28,7 +28,7 @@ class AuthViewModel(private val userRepository: UserRepository) : ViewModel() {
                     _authState.value = AuthState.Success(
                         uid = usuarioGuardado.firebaseUid ?: "",
                         nombreUsuario = usuarioGuardado.nombreUsuario,
-                        rol = usuarioGuardado.rol // <--- CORREGIDO: Eliminado el 'val' erróneo
+                        rol = usuarioGuardado.rol
                     )
                 },
                 onFailure = { error ->

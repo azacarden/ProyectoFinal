@@ -73,9 +73,9 @@ class MedicationAdapter(
 
                 itemHolder.tvNombre.text = med.nombre
 
-                // CORREGIDO: Mostramos la descripción y abajo, entre corchetes, quién lo dio de alta
+               // Muestra quién ha añadido el medicamento o la cita
                 val descripcionBase = if (med.mensajePersonalizado.isBlank()) "Sin descripción" else med.mensajePersonalizado
-                itemHolder.tvMensaje.text = "$descripcionBase\n[${med.creadoPorNombre}]"
+                itemHolder.tvMensaje.text = "$descripcionBase\n ${med.creadoPorNombre} "
 
                 val horasTexto = listaHoras.joinToString(", ") { it.horaToma }
 

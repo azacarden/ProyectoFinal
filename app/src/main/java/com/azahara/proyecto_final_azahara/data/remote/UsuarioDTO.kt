@@ -7,5 +7,5 @@ data class UsuarioDTO(
     val uid: String = "",
     val nombreUsuario: String = "",
     val correo: String = "",
-    val rol: String = "" // "Paciente" o "Cuidador"
+    val rol: String = ""
 )

@@ -42,13 +42,13 @@ interface MedicamentoDao {
     @Query("SELECT * FROM medicamentos WHERE pendienteSincronizacion = 1 OR marcadoParaEliminar = 1")
     suspend fun obtenerPendientesDeSincronizar(): List<MedicamentoConHorarios>
 
-    // ¡CORREGIDO! Activamos la limpieza previa para eliminar lo que ya no existe en la nube
+    // Limpieza previa para eliminar lo que ya no exista en la nube
     @Transaction
     suspend fun reemplazarTodosLosMedicamentos(
         nuevosMedicamentos: List<Medicamento>,
         nuevosHorarios: List<HorarioMedicamento>
     ) {
-        vaciarTabla() // <--- Al limpiar la tabla, las eliminaciones del paciente se reflejan al instante
+        vaciarTabla() //Al limpiar la tabla, las eliminaciones del paciente se reflejan al instante
         nuevosMedicamentos.forEach { insertMedicamento(it) }
         insertHorarios(nuevosHorarios)
     }

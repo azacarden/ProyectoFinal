@@ -20,6 +20,8 @@ import com.azahara.proyecto_final_azahara.model.Usuario
         CitaMedica::class,
         AlarmaGeneral::class
     ],
+
+    // Cada vez que añadimos algo al modelo, debemos aumentar la versió. Si no fallará
     version = 13,
     exportSchema = false
 )

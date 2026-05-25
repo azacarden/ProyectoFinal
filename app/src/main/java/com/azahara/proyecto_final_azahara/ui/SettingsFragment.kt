@@ -21,12 +21,12 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
         val switchSonidos = view.findViewById<MaterialSwitch>(R.id.switchSonidos)
         val switchContraste = view.findViewById<MaterialSwitch>(R.id.switchAltoContraste)
 
-        // 1. Cargamos el estado actual guardado en la memoria del teléfono
+        // Carga el estado actual guardado en la memoria del teléfono
         switchTexto.isChecked = preferencesManager.textoGrande
         switchSonidos.isChecked = preferencesManager.sonidosActivados
         switchContraste.isChecked = preferencesManager.altoContraste
 
-        // 2. Escuchamos los cambios en tiempo real
+        // Escucha los cambios en tiempo real
         switchTexto.setOnCheckedChangeListener { _, isChecked ->
             preferencesManager.textoGrande = isChecked
             mostrarAviso(view, "Tamaño de texto actualizado")

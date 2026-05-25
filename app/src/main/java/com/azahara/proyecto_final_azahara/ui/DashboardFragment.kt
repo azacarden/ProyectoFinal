@@ -75,7 +75,7 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         view.findViewById<MaterialCardView>(R.id.cardEscanearPaciente).setOnClickListener {
             val options = ScanOptions().apply {
                 setDesiredBarcodeFormats(ScanOptions.QR_CODE)
-                setPrompt("Enfoca el código QR del Paciente")
+                setPrompt("Escanéa el código QR del Paciente")
                 setBeepEnabled(true)
             }
             barcodeLauncher.launch(options)
@@ -87,7 +87,7 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
             evaluarLayoutPorEstados()
         }
 
-        // 🛠️ ASEGURAMOS QUE TODAS LAS RUTAS LLEVEN EL NOMBRE DEL PACIENTE
+        // Aseguramos que el QR es de un paciente
         view.findViewById<MaterialCardView>(R.id.cardMedicacion).setOnClickListener {
             val bundle = Bundle().apply {
                 putString("PACIENTE_UID", obtenerUidDestino())
@@ -156,7 +156,7 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
                 btnVolverPacientes.visibility = View.VISIBLE
 
                 ivIconoCuidadores.setImageResource(android.R.drawable.ic_menu_info_details)
-                tvTituloCuidadores.text = "Info Paciente"
+                tvTituloCuidadores.text = "Info de paciente"
 
                 comprobarTareasPendientesDeHoy()
             }
@@ -173,7 +173,7 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         }
     }
 
-    // 🛠️ ¡CORREGIDO! Dispara una Notificación Push Real en el panel de Android
+    // Lanza una Notificación Push en el panel de Android
     private fun comprobarTareasPendientesDeHoy() {
         if (avisoNotificacionesMostrado) return
 
@@ -298,7 +298,7 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
             holder.itemView.setOnLongClickListener {
                 MaterialAlertDialogBuilder(requireContext())
                     .setTitle("⚠️ Desvincular Paciente")
-                    .setMessage("¿Estás seguro de que deseas dejar de monitorizar a $nombre?")
+                    .setMessage("¿Estás seguro que quieres desvincularte de $nombre?")
                     .setNegativeButton("Cancelar", null)
                     .setPositiveButton("Sí, desvincular") { _, _ ->
                         desvincularPacienteDeLaNube(uid, nombre)
