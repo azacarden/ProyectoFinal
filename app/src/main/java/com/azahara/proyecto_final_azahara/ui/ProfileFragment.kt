@@ -24,14 +24,16 @@ import com.journeyapps.barcodescanner.ScanOptions
 class ProfileFragment : Fragment(R.layout.fragment_profile) {
 
     private val db = FirebaseFirestore.getInstance()
-    private var miUsuario = "Usuario_Anónimo"
+    private var miUsuario = "Usuario_Local"
     private var miRol = "Paciente"
+    private var miUid = "" // <- NUEVO
 
     private val barcodeLauncher = registerForActivityResult(ScanContract()) { result ->
         if (result.contents == null) {
             Toast.makeText(requireContext(), "Escaneo cancelado", Toast.LENGTH_SHORT).show()
         } else {
-            vincularEnLaNube(result.contents)
+            // El resultado del QR ahora es el UID alfanumérico del paciente
+            verificarYVincularPaciente(result.contents)
         }
     }
 
@@ -41,17 +43,18 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         val prefs = requireContext().getSharedPreferences("SesionUsuario", android.content.Context.MODE_PRIVATE)
         miUsuario = prefs.getString("usuario_identificado", "Usuario_Local") ?: "Usuario_Local"
         miRol = prefs.getString("rol_usuario", "Paciente") ?: "Paciente"
+        miUid = prefs.getString("firebase_uid", "") ?: "" // <- Extraemos el UID seguro
 
         val ivQrCode = view.findViewById<ImageView>(R.id.ivQrCode)
         val btnEscanear = view.findViewById<Button>(R.id.btnEscanearQr)
-        val tvTituloFragment = view.findViewById<TextView>(R.id.tvTituloPerfil)
+        val tvTituloFragment = view.findViewById<TextView>(R.id.tvTituloAddGeneral) // Ajustado al ID real de tu XML para el título
         val tvMiRol = view.findViewById<TextView>(R.id.tvMiRol)
 
         val btnCerrarSesion = view.findViewById<Button>(R.id.btnCerrarSesion)
         val tvTituloPacientes = view.findViewById<TextView>(R.id.tvTituloPacientes)
         val rvPacientes = view.findViewById<RecyclerView>(R.id.rvPacientes)
 
-        // 1. LÓGICA DE CERRAR SESIÓN
+        // LÓGICA DE CERRAR SESIÓN
         btnCerrarSesion.setOnClickListener {
             MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Cerrar Sesión")
@@ -64,11 +67,13 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                 .show()
         }
 
-        // 2. CONFIGURACIÓN DE LOS TEXTOS SOLICITADOS (Paso global para ambos roles)
-        tvTituloFragment.text = "Perfil de $miUsuario"
+        // CONFIGURACIÓN DE LOS TEXTOS
+        if (tvTituloFragment != null) {
+            tvTituloFragment.text = "Perfil de $miUsuario"
+        }
         tvMiRol.text = "Rol: $miRol"
 
-        // 3. ADAPTAR LA MÁSCARA VISUAL SEGÚN EL ROL
+        // ADAPTAR LA MÁSCARA VISUAL SEGÚN EL ROL
         if (miRol == "Cuidador") {
             view.findViewById<View>(R.id.cardQr)?.visibility = View.GONE
             btnEscanear.visibility = View.VISIBLE
@@ -76,10 +81,9 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
             tvTituloPacientes.visibility = View.VISIBLE
             rvPacientes.visibility = View.VISIBLE
             cargarPacientesDelCuidador(rvPacientes)
-
         } else {
             view.findViewById<View>(R.id.cardQr)?.visibility = View.VISIBLE
-            ivQrCode.setImageBitmap(generarQr(miUsuario))
+            ivQrCode.setImageBitmap(generarQr(miUid)) // <- El QR ahora expone el UID alfanumérico seguro
             btnEscanear.visibility = View.GONE
         }
 
@@ -94,21 +98,64 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
     }
 
     private fun cargarPacientesDelCuidador(rv: RecyclerView) {
+        // CORREGIDO: Buscamos las vinculaciones usando tu UID alfanumérico de Cuidador
         db.collection("vinculaciones")
-            .whereEqualTo("cuidadorId", miUsuario)
+            .whereEqualTo("cuidadorUid", miUid)
             .get()
             .addOnSuccessListener { documents ->
-                val pacientes = documents.map { it.getString("pacienteId") ?: "Desconocido" }.distinct()
+                // Mapeamos guardando tanto el ID como el Nombre para el listado
+                val datosPacientes = documents.map { doc ->
+                    Pair(
+                        doc.getString("pacienteUid") ?: "Desconocido",
+                        doc.getString("pacienteNombre") ?: "Paciente Anónimo"
+                    )
+                }.distinctBy { it.first }
 
                 rv.layoutManager = LinearLayoutManager(requireContext())
-                rv.adapter = PacientesAdapter(pacientes) { pacienteUid ->
+                rv.adapter = PacientesAdapter(datosPacientes) { pacienteUid ->
+                    // Al pulsar, viajamos a la lista de medicación enviándole el UID seguro del paciente
                     val bundle = Bundle().apply { putString("PACIENTE_UID", pacienteUid) }
                     findNavController().navigate(R.id.medicationListFragment, bundle)
                 }
             }
     }
 
-    inner class PacientesAdapter(private val pacientes: List<String>, private val onClick: (String) -> Unit) : RecyclerView.Adapter<PacientesAdapter.ViewHolder>() {
+    // Comprobamos en Firestore que el QR escaneado pertenece a un usuario real antes de vincular
+    private fun verificarYVincularPaciente(pacienteUid: String) {
+        db.collection("usuarios").document(pacienteUid).get()
+            .addOnSuccessListener { documento ->
+                if (documento.exists()) {
+                    val nombrePaciente = documento.getString("nombreUsuario") ?: "Paciente"
+
+                    // Creamos el mapa relacional perfecto utilizando los UIDs de ambos
+                    val vinculacion = hashMapOf(
+                        "cuidadorUid" to miUid,
+                        "cuidadorNombre" to miUsuario,
+                        "pacienteUid" to pacienteUid,
+                        "pacienteNombre" to nombrePaciente,
+                        "fechaVinculacion" to System.currentTimeMillis()
+                    )
+
+                    db.collection("vinculaciones").add(vinculacion)
+                        .addOnSuccessListener {
+                            Toast.makeText(requireContext(), "¡Vinculado con con éxito a $nombrePaciente!", Toast.LENGTH_SHORT).show()
+                            // Refrescamos la pantalla
+                            findNavController().navigate(R.id.profileFragment)
+                        }
+                } else {
+                    Toast.makeText(requireContext(), "Error: El código QR no pertenece a un paciente válido", Toast.LENGTH_LONG).show()
+                }
+            }
+            .addOnFailureListener {
+                Toast.makeText(requireContext(), "Error de conexión al verificar el código", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    inner class PacientesAdapter(
+        private val pacientes: List<Pair<String, String>>,
+        private val onClick: (String) -> Unit
+    ) : RecyclerView.Adapter<PacientesAdapter.ViewHolder>() {
+
         inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
             val tvNombre: TextView = view.findViewById(R.id.tvNombrePacienteItem)
         }
@@ -117,9 +164,9 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
             return ViewHolder(view)
         }
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            val paciente = pacientes[position]
-            holder.tvNombre.text = paciente
-            holder.itemView.setOnClickListener { onClick(paciente) }
+            val (uid, nombre) = pacientes[position]
+            holder.tvNombre.text = nombre // Pintamos el nombre legible del paciente
+            holder.itemView.setOnClickListener { onClick(uid) } // Al pulsar, enviamos su UID al fragmento destino
         }
         override fun getItemCount() = pacientes.size
     }
@@ -128,14 +175,5 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         return try {
             BarcodeEncoder().encodeBitmap(contenido, BarcodeFormat.QR_CODE, 500, 500)
         } catch (e: Exception) { null }
-    }
-
-    private fun vincularEnLaNube(pacienteUid: String) {
-        val vinculacion = hashMapOf("cuidadorId" to miUsuario, "pacienteId" to pacienteUid, "fechaVinculacion" to System.currentTimeMillis())
-        db.collection("vinculaciones").add(vinculacion)
-            .addOnSuccessListener {
-                Toast.makeText(requireContext(), "¡Paciente vinculado con éxito!", Toast.LENGTH_SHORT).show()
-                findNavController().navigate(R.id.profileFragment)
-            }
     }
 }
