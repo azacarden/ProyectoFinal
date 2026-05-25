@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.azahara.proyecto_final_azahara.model.Usuario
 import java.util.UUID
 
 @Entity(
@@ -24,13 +25,14 @@ import java.util.UUID
     ],
     indices = [
         Index(value = ["usuarioId"]),
-        Index(value = ["horarioId"])  // <--- OBLIGATORIO: Indexa las búsquedas relacionales
+        Index(value = ["horarioId"])
     ]
 )
 data class Historial(
     @PrimaryKey val id: String = UUID.randomUUID().toString(),
-    val usuarioId: String, // Ahora apunta al UID de tipo String de la tabla usuarios
-    val medicamentoId: String, // Ahora apunta al ID de tipo String del medicamento tomado
+    val usuarioId: String,
+    val medicamentoId: String,
+    val horarioId: String,
     val fechaHora: Long,
-    val estado: String // "Tomada", "Olvidada", "Omitida"
+    val estado: String
 )

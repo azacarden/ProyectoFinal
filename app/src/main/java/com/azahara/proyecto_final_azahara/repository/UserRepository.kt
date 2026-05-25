@@ -1,37 +1,32 @@
 package com.azahara.proyecto_final_azahara.repository
 
 import com.azahara.proyecto_final_azahara.data.local.UsuarioDao
+import com.azahara.proyecto_final_azahara.data.remote.UsuarioDTO
 import com.azahara.proyecto_final_azahara.model.Usuario
 import com.azahara.proyecto_final_azahara.utils.CryptoUtils
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
 class UserRepository(
     private val usuarioDao: UsuarioDao,
-    private val firebaseAuth: FirebaseAuth
+    private val firebaseAuth: FirebaseAuth,
+    private val firestore: FirebaseFirestore
 ) {
 
-    /**
-     * Valida el login de forma 100% offline aplicando criptografía SHA-256.
-     * Además, implementa la Sincronización Diferida si el usuario no estaba en la nube.
-     */
     suspend fun iniciarSesionLocal(nombre: String, contrasenaPlana: String): Result<Usuario> {
         return withContext(Dispatchers.IO) {
             try {
-                // 1. Transformamos la contraseña introducida al mismo formato hash guardado en Room
                 val hashBuscado = CryptoUtils.sha256(contrasenaPlana)
-
-                // 2. Consultamos la base de datos de forma segura
-                val usuarioEncontrado = usuarioDao.getUsuarioPorId(nombre)
+                val usuarioEncontrado = usuarioDao.getUsuarioPorNombreSync(nombre)
 
                 if (usuarioEncontrado != null && usuarioEncontrado.contrasenaHash == hashBuscado) {
 
                     var usuarioActualizado = usuarioEncontrado
 
-                    // 3. SINCRONIZACIÓN DIFERIDA: Si no tiene UID, se registró offline. Lo intentamos subir ahora.
-                    if (usuarioActualizado.id == null) {
+                    if (usuarioActualizado.firebaseUid == null) {
                         try {
                             val authResult = firebaseAuth.createUserWithEmailAndPassword(
                                 usuarioActualizado.correo,
@@ -40,13 +35,25 @@ class UserRepository(
 
                             val firebaseUser = authResult.user
                             if (firebaseUser != null) {
-                                usuarioActualizado = usuarioActualizado.copy(id = firebaseUser.uid)
+                                usuarioActualizado = usuarioActualizado.copy(firebaseUid = firebaseUser.uid)
                                 usuarioDao.updateUsuario(usuarioActualizado)
+
+                                val dto = UsuarioDTO(
+                                    uid = firebaseUser.uid,
+                                    nombreUsuario = usuarioActualizado.nombreUsuario,
+                                    correo = usuarioActualizado.correo,
+                                    rol = usuarioActualizado.rol
+                                )
+                                firestore.collection("usuarios").document(firebaseUser.uid).set(dto).await()
                             }
                         } catch (e: Exception) {
-                            // Si vuelve a fallar (sigue sin internet), no bloqueamos el login.
-                            // El usuario entra localmente y lo volveremos a intentar en el próximo login.
-                            android.util.Log.e("UserRepository", "Sincronización diferida en login fallida: ${e.message}")
+                            android.util.Log.w("UserRepository", "Sincronización diferida en login fallida.")
+                        }
+                    } else {
+                        try {
+                            firebaseAuth.signInWithEmailAndPassword(usuarioActualizado.correo, contrasenaPlana).await()
+                        } catch (e: Exception) {
+                            android.util.Log.w("UserRepository", "No se pudo renovar token de Firebase. Mantenemos sesión local.")
                         }
                     }
 
@@ -68,33 +75,43 @@ class UserRepository(
     ): Result<Usuario> {
         return withContext(Dispatchers.IO) {
             try {
+                val existe = usuarioDao.getUsuarioPorNombreSync(nombre)
+                if (existe != null) {
+                    return@withContext Result.failure(Exception("El nombre de usuario ya está en uso."))
+                }
+
                 val contrasenaHash = CryptoUtils.sha256(contrasenaPlana)
 
-                val nuevoUsuario = Usuario(
+                var nuevoUsuario = Usuario(
                     nombreUsuario = nombre,
                     correo = correo,
                     contrasenaHash = contrasenaHash,
                     rol = rol
                 )
 
-                // Guardamos en local (Fuente de Verdad)
-                val idGenerado = usuarioDao.insertUsuario(nuevoUsuario)
-                var usuarioGuardado = nuevoUsuario.copy(id = idGenerado.toInt())
+                usuarioDao.insertUsuario(nuevoUsuario)
 
-                // Intentamos sincronizar con la nube inmediatamente
                 try {
                     val authResult = firebaseAuth.createUserWithEmailAndPassword(correo, contrasenaPlana).await()
                     val firebaseUser = authResult.user
 
                     if (firebaseUser != null) {
-                        usuarioGuardado = usuarioGuardado.copy(firebaseUid = firebaseUser.uid)
-                        usuarioDao.updateUsuario(usuarioGuardado)
+                        nuevoUsuario = nuevoUsuario.copy(firebaseUid = firebaseUser.uid)
+                        usuarioDao.updateUsuario(nuevoUsuario)
+
+                        val dto = UsuarioDTO(
+                            uid = firebaseUser.uid,
+                            nombreUsuario = nombre,
+                            correo = correo,
+                            rol = rol
+                        )
+                        firestore.collection("usuarios").document(firebaseUser.uid).set(dto).await()
                     }
                 } catch (e: Exception) {
                     android.util.Log.e("UserRepository", "Sincronización diferida o fallida: ${e.message}")
                 }
 
-                Result.success(usuarioGuardado)
+                Result.success(nuevoUsuario)
             } catch (e: Exception) {
                 Result.failure(Exception("Error al registrar en base de datos local: ${e.localizedMessage}"))
             }

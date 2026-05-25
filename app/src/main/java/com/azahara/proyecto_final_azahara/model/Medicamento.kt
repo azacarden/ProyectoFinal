@@ -10,6 +10,7 @@ data class Medicamento(
     val nombre: String,
     val mensajePersonalizado: String,
     val frecuencia: String = "Diaria",
+    val diaEspecifico: String? = null,
     val urlProspecto: String? = null,
     val contraindicaciones: String? = null
 )

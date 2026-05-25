@@ -26,6 +26,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Locale
@@ -57,7 +58,6 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Extraemos el String de los argumentos
         idMedEditar = arguments?.getString("MEDICAMENTO_ID_EDITAR")
 
         val tvTituloPantalla = view.findViewById<TextView>(R.id.tvTituloAdd)
@@ -107,34 +107,37 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
             actualizarVisibilidadFrecuencia(checkedId)
         }
 
-        // Evaluamos nulabilidad en lugar de -1
         if (idMedEditar != null) {
             tvTituloPantalla.text = "Modificar Medicamento"
             btnGuardar.text = "Guardar Cambios"
             view.findViewById<View>(R.id.llBuscador).visibility = View.GONE
 
             viewLifecycleOwner.lifecycleScope.launch {
-                val med = withContext(Dispatchers.IO) {
-                    // idMedEditar ahora es un String, compatible con la nueva entidad
-                    AppDatabase.getDatabase(requireContext()).medicamentoDao().getMedicamentoPorId(idMedEditar!!)
+                val wrapper = withContext(Dispatchers.IO) {
+                    AppDatabase.getDatabase(requireContext()).medicamentoDao()
+                        .getMedicamentoConHorariosPorId(idMedEditar!!)
+                        .firstOrNull()
                 }
-                med.let {
-                    etNombre.setText(it.nombre)
-                    etMensaje.setText(it.mensajePersonalizado)
-                    urlProspectoGuardada = it.urlProspecto
-                    contraindicacionesGuardadas = it.contraindicaciones
 
-                    // check() dispara el listener y muestra u oculta los desplegables correctamente
-                    val idRadioButton = when (it.frecuencia) {
-                        "Semanal" -> { actvDiaSemana.setText(it.diaEspecifico, false); R.id.rbSemanal }
-                        "Mensual" -> { actvDiaMes.setText(it.diaEspecifico, false); R.id.rbMensual }
+                wrapper?.let {
+                    val med = it.medicamento
+                    etNombre.setText(med.nombre)
+                    etMensaje.setText(med.mensajePersonalizado)
+                    urlProspectoGuardada = med.urlProspecto
+                    contraindicacionesGuardadas = med.contraindicaciones
+
+                    val idRadioButton = when (med.frecuencia) {
+                        "Semanal" -> { actvDiaSemana.setText(med.diaEspecifico, false); R.id.rbSemanal }
+                        "Mensual" -> { actvDiaMes.setText(med.diaEspecifico, false); R.id.rbMensual }
                         else -> R.id.rbDiaria
                     }
                     rgFrecuencia.check(idRadioButton)
 
-                    if (it.horaToma.isNotBlank()) {
-                        listaHoras.addAll(it.horaToma.split(", "))
-                        tvHorasSeleccionadas.text = "Horas seleccionadas: ${it.horaToma}"
+                    if (it.horarios.isNotEmpty()) {
+                        // Limpiamos y rellenamos la lista visual con las horas extraídas de los objetos relacionales
+                        listaHoras.clear()
+                        listaHoras.addAll(it.horarios.map { horario -> horario.horaToma })
+                        tvHorasSeleccionadas.text = "Horas seleccionadas: ${listaHoras.joinToString(", ")}"
                     }
                 }
             }
@@ -170,7 +173,7 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
                 return@setOnClickListener
             }
 
-            val horas = listaHoras.joinToString(", ")
+            val horas = listaHoras.joinToString(",")
             val freq = if (rbSemanal.isChecked) "Semanal" else if (rbMensual.isChecked) "Mensual" else "Diaria"
             val dia = if (rbSemanal.isChecked) actvDiaSemana.text.toString() else if (rbMensual.isChecked) actvDiaMes.text.toString() else null
 
@@ -228,7 +231,11 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
                         is CimaUiState.SaveSuccess -> {
                             progressBar.visibility = View.GONE
                             Toast.makeText(requireContext(), "Guardado", Toast.LENGTH_SHORT).show()
-                            viewModel.ultimoMedicamentoGuardado?.let { AlarmHelper(requireContext()).programarAlarma(it) }
+
+                            // Extraemos el wrapper completo y reprogramamos las alarmas
+                            viewModel.ultimoMedicamentoGuardado?.let { wrapper ->
+                                AlarmHelper(requireContext()).programarAlarma(wrapper)
+                            }
                             findNavController().navigateUp()
                         }
                         else -> progressBar.visibility = View.GONE

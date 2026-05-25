@@ -36,14 +36,15 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
     private var fechaSeleccionada = false
     private var horaSeleccionada = false
 
-    private var idCitaEditar: Int = -1
+    // CORREGIDO: Ahora es String nullable en lugar de Int
+    private var idCitaEditar: String? = null
 
     private val opcionesRecordatorio = linkedMapOf(
         "1 hora antes" to 60,
         "2 horas antes" to 120,
         "12 horas antes" to 720,
         "24 horas antes" to 1440,
-        "Personalizar..." to -1 // Valor centinela para detectar personalización
+        "Personalizar..." to -1
     )
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -53,7 +54,8 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
         val dao = database.citaMedicaDao()
         viewModel = AppointmentViewModel(dao)
 
-        idCitaEditar = arguments?.getInt("CITA_ID_EDITAR", -1) ?: -1
+        // CORREGIDO: Leemos un String del Bundle
+        idCitaEditar = arguments?.getString("CITA_ID_EDITAR")
 
         val tvTituloPantalla = view.findViewById<TextView>(R.id.tvTituloAddCita)
         val etMotivo = view.findViewById<EditText>(R.id.etTituloCita)
@@ -63,8 +65,8 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
         val btnFecha = view.findViewById<Button>(R.id.btnElegirFecha)
         val btnHora = view.findViewById<Button>(R.id.btnElegirHora)
         val btnGuardar = view.findViewById<Button>(R.id.btnGuardarCita)
-
         val actvReminder = view.findViewById<AutoCompleteTextView>(R.id.actvReminderInterval)
+
         val adapter = ArrayAdapter(
             requireContext(),
             android.R.layout.simple_dropdown_item_1line,
@@ -81,12 +83,13 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
             }
         }
 
-        if (idCitaEditar != -1) {
+        // CORREGIDO: Verificamos si no es null
+        if (idCitaEditar != null) {
             tvTituloPantalla.text = "Modificar Cita Médica"
             btnGuardar.text = "Guardar Cambios"
 
             viewLifecycleOwner.lifecycleScope.launch {
-                val cita = withContext(Dispatchers.IO) { dao.getCitaById(idCitaEditar) }
+                val cita = withContext(Dispatchers.IO) { dao.getCitaById(idCitaEditar!!) }
                 cita?.let {
                     etMotivo.setText(it.motivo)
                     etMedico.setText(it.medico)
@@ -167,12 +170,12 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
                 return@setOnClickListener
             }
 
-            if (idCitaEditar == -1) {
+            if (idCitaEditar == null) {
                 viewModel.guardarCita(motivo, medico, especialidad, calendarioCita.timeInMillis, notas)
             } else {
                 val helper = AlarmHelper(requireContext())
                 val citaAntigua = CitaMedica(
-                    id = idCitaEditar,
+                    id = idCitaEditar!!, // <- CORREGIDO
                     motivo = "",
                     medico = "",
                     especialidad = "",
@@ -182,7 +185,7 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
                 )
                 helper.cancelarAlarmaCita(citaAntigua)
 
-                viewModel.actualizarCita(idCitaEditar, motivo, medico, especialidad, calendarioCita.timeInMillis, notas)
+                viewModel.actualizarCita(idCitaEditar!!, motivo, medico, especialidad, calendarioCita.timeInMillis, notas)
             }
         }
 
@@ -220,7 +223,6 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
             .setPositiveButton("Aceptar") { _, _ ->
                 val minutos = input.text.toString().toIntOrNull()
                 if (minutos != null && minutos > 0) {
-                    // Actualizamos el campo de texto visualmente
                     textView.setText("$minutos minutos antes", false)
                 } else {
                     textView.setText("", false)

@@ -2,7 +2,7 @@ package com.azahara.proyecto_final_azahara.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.azahara.proyecto_final_azahara.data.local.Medicamento
+import com.azahara.proyecto_final_azahara.model.Medicamento
 import com.azahara.proyecto_final_azahara.data.local.MedicamentoDao
 import com.azahara.proyecto_final_azahara.data.network.MedicamentoBasicoDto
 import com.azahara.proyecto_final_azahara.model.HorarioMedicamento
@@ -70,6 +70,8 @@ class AddMedicationViewModel(
         return null
     }
 
+// ... (resto de importaciones e inicio de la clase igual)
+
     fun validarYGuardar(
         nombre: String,
         horasTexto: String,
@@ -97,6 +99,7 @@ class AddMedicationViewModel(
                     nombre = nombre,
                     mensajePersonalizado = mensaje,
                     frecuencia = frecuencia,
+                    diaEspecifico = diaEspecifico, // <- CORREGIDO: Ahora sí le pasamos el valor
                     urlProspecto = url,
                     contraindicaciones = contra
                 )

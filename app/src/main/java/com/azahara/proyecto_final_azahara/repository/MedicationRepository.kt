@@ -1,6 +1,6 @@
 package com.azahara.proyecto_final_azahara.repository
 
-import com.azahara.proyecto_final_azahara.data.local.Medicamento
+import com.azahara.proyecto_final_azahara.model.Medicamento
 import com.azahara.proyecto_final_azahara.data.local.MedicamentoDao
 import com.azahara.proyecto_final_azahara.data.remote.MedicamentoDTO
 import com.azahara.proyecto_final_azahara.model.HorarioMedicamento
@@ -38,6 +38,7 @@ class MedicationRepository(
                 mensajePersonalizado = medicamentoConHorarios.medicamento.mensajePersonalizado,
                 horarios = medicamentoConHorarios.horarios.map { it.horaToma },
                 frecuencia = medicamentoConHorarios.medicamento.frecuencia,
+                diaEspecifico = medicamentoConHorarios.medicamento.diaEspecifico,
                 urlProspecto = medicamentoConHorarios.medicamento.urlProspecto,
                 contraindicaciones = medicamentoConHorarios.medicamento.contraindicaciones
             )
@@ -96,6 +97,7 @@ class MedicationRepository(
                             nombre = dto.nombre,
                             mensajePersonalizado = dto.mensajePersonalizado,
                             frecuencia = dto.frecuencia,
+                            diaEspecifico = dto.diaEspecifico,
                             urlProspecto = dto.urlProspecto,
                             contraindicaciones = dto.contraindicaciones
                         )

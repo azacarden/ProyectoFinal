@@ -32,5 +32,5 @@ interface CitaMedicaDao {
     fun getPastCitas(): Flow<List<CitaMedica>>
 
     @Query("SELECT * FROM citas_medicas WHERE id = :id")
-    suspend fun getCitaById(id: Int): CitaMedica?
+    suspend fun getCitaById(id: String): CitaMedica? // <- CORREGIDO: Ahora es String
 }

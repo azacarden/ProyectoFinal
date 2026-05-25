@@ -36,9 +36,8 @@ class AppointmentHistoryFragment : Fragment(R.layout.fragment_appointment_histor
                 Toast.makeText(requireContext(), "Cita eliminada", Toast.LENGTH_SHORT).show()
             },
             onItemClick = { cita ->
-                // Viajamos al formulario pero metiendo en la maleta el ID de la cita que queremos editar
                 val bundle = Bundle().apply {
-                    putInt("CITA_ID_EDITAR", cita.id)
+                    putString("CITA_ID_EDITAR", cita.id) // <- CORREGIDO
                 }
                 findNavController().navigate(R.id.action_appointmentList_to_addAppointment, bundle)
             }

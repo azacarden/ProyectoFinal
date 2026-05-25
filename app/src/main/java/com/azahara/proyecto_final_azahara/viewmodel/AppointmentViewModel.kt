@@ -51,8 +51,12 @@ class AppointmentViewModel(private val citaDao: CitaMedicaDao) : ViewModel() {
                     notas = notas,
                     recordatorioPrevio = 60
                 )
-                val idGenerado = citaDao.insertCita(nuevaCita)
-                ultimaCitaGuardada = nuevaCita.copy(id = idGenerado.toInt())
+                // CORREGIDO: Insertamos directamente. El UUID de la cita ya está generado.
+                citaDao.insertCita(nuevaCita)
+
+                // Asignamos la cita intacta
+                ultimaCitaGuardada = nuevaCita
+
                 _guardadoExitoso.value = true
             } catch (e: Exception) {
                 _guardadoExitoso.value = false
@@ -60,7 +64,7 @@ class AppointmentViewModel(private val citaDao: CitaMedicaDao) : ViewModel() {
         }
     }
 
-    fun actualizarCita(id: Int, motivo: String, medico: String, especialidad: String, fechaHoraMilis: Long, notas: String) {
+    fun actualizarCita(id: String, motivo: String, medico: String, especialidad: String, fechaHoraMilis: Long, notas: String) {
         viewModelScope.launch {
             try {
                 val citaModificada = CitaMedica(

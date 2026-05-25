@@ -11,26 +11,43 @@ import androidx.core.app.NotificationCompat
 class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val tipoAlarma = intent.getStringExtra("TIPO_ALARMA")
+
         if (tipoAlarma == "MEDICAMENTO") {
             val nombre = intent.getStringExtra("MED_NOMBRE") ?: "Medicamento"
             val mensaje = intent.getStringExtra("MED_MENSAJE") ?: "Es hora de tu toma diaria"
-            val medId = intent.getStringExtra("MED_ID") ?: ""
 
-            mostrarNotificacion(context, "Toma de $nombre", mensaje)
+            mostrarNotificacion(context, "Toma de $nombre", mensaje, "canal_medicacion")
+
+        } else if (tipoAlarma == "CITA") {
+            val motivo = intent.getStringExtra("CITA_MOTIVO") ?: "Revisión médica"
+            val medico = intent.getStringExtra("CITA_MEDICO") ?: "tu especialista"
+
+            mostrarNotificacion(context, "Recordatorio de Cita", "Tienes cita para $motivo con $medico", "canal_citas")
+
+        } else if (tipoAlarma == "ALARMA_GENERAL") {
+            val titulo = intent.getStringExtra("GENERAL_TITULO") ?: "Aviso"
+            val notas = intent.getStringExtra("GENERAL_NOTAS") ?: "Tienes una alarma programada"
+
+            mostrarNotificacion(context, titulo, notas, "canal_general")
         }
     }
 
-    private fun mostrarNotificacion(context: Context, titulo: String, mensaje: String) {
+    private fun mostrarNotificacion(context: Context, titulo: String, mensaje: String, channelId: String) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val channelId = "canal_medicacion"
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val nombreCanal = when (channelId) {
+                "canal_medicacion" -> "Alertas de Medicación"
+                "canal_citas" -> "Avisos de Citas"
+                else -> "Avisos Generales"
+            }
+
             val channel = NotificationChannel(
                 channelId,
-                "Alertas de Medicación",
+                nombreCanal,
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Canal para los avisos del pastillero"
+                description = "Canal para los avisos de la aplicación"
                 enableVibration(true)
             }
             notificationManager.createNotificationChannel(channel)
