@@ -2,23 +2,42 @@ package com.azahara.proyecto_final_azahara
 
 import android.os.Bundle
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
-import android.view.Menu // Importante para inflar el menú
-import android.view.MenuItem // Importante para capturar los clics
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
+import com.azahara.proyecto_final_azahara.utils.PreferencesManager
 import com.google.android.material.appbar.MaterialToolbar
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var navController: NavController
 
+    // Sobrescribe el contexto para aplicar el tamaño de letra gigante globalmente
+    override fun attachBaseContext(newBase: Context) {
+        val pm = PreferencesManager(newBase)
+        val config = android.content.res.Configuration(newBase.resources.configuration)
+        config.fontScale = if (pm.textoGrande) 1.3f else 1.0f // Escalado del 30% más grande
+        super.attachBaseContext(newBase.createConfigurationContext(config))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Carga la preferencia de Alto Contraste antes de pintar la actividad
+        val pm = PreferencesManager(this)
+        if (pm.altoContraste) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+        } else {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+        }
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
@@ -59,7 +78,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.top_app_bar_menu, menu)

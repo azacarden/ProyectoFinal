@@ -2,6 +2,7 @@ package com.azahara.proyecto_final_azahara.ui
 
 import android.os.Bundle
 import android.view.View
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.fragment.app.Fragment
 import com.azahara.proyecto_final_azahara.R
 import com.azahara.proyecto_final_azahara.utils.PreferencesManager
@@ -26,20 +27,27 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
         switchSonidos.isChecked = preferencesManager.sonidosActivados
         switchContraste.isChecked = preferencesManager.altoContraste
 
-        // Escucha los cambios en tiempo real
+        // Escucha los cambios en tiempo real aplicando cambios dinámicos inmediatos
         switchTexto.setOnCheckedChangeListener { _, isChecked ->
             preferencesManager.textoGrande = isChecked
-            mostrarAviso(view, "Tamaño de texto actualizado")
+            // Fuerza la recreación del ciclo visual para re-escalar las fuentes al instante
+            activity?.recreate()
         }
 
         switchSonidos.setOnCheckedChangeListener { _, isChecked ->
             preferencesManager.sonidosActivados = isChecked
-            mostrarAviso(view, "Configuración de sonidos actualizada")
+            mostrarAviso(view, "Configuración de alarmas actualizada")
         }
 
         switchContraste.setOnCheckedChangeListener { _, isChecked ->
             preferencesManager.altoContraste = isChecked
-            mostrarAviso(view, "Modo contraste actualizado")
+
+            // Mutación instantánea del árbol de estilos en modo caliente
+            if (isChecked) {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+            } else {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+            }
         }
     }
 

@@ -27,7 +27,6 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
     private var miRol = "Paciente"
     private var miUid = ""
 
-    // Registro para poder limpiar el listener en tiempo real de Firebase al salir del fragment
     private var vinculacionListener: ListenerRegistration? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -62,9 +61,6 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                 .show()
         }
 
-
-        // Aquí he usado html para el estilo de negrita del perfil
-
         if (miRol == "Cuidador") {
             if (targetPacienteUid != null && targetPacienteUid != miUid) {
                 view.findViewById<View>(R.id.cardQr)?.visibility = View.GONE
@@ -82,7 +78,6 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
 
                             tvTituloFragment.text = "Expediente de Salud"
 
-                            // Etiquetas en negrita y valores normales usando HTML
                             val htmlContenido = "<b>👤 Paciente:</b> $nombre<br><br>" +
                                     "<b>📧 Correo:</b> $correo<br><br>" +
                                     "<b>📞 Teléfono Personal:</b> $telefono<br><br>" +
@@ -160,7 +155,6 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         }
     }
 
-    // Usam SnapshotListener para pintar al cuidador al instante
     private fun renderizarDatosDelCuidadorDelPaciente(textView: TextView) {
         vinculacionListener = db.collection("vinculaciones")
             .whereEqualTo("pacienteUid", miUid)
@@ -214,10 +208,10 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
             layoutParams = lp
         }
 
-        // Campo exclusivo para introducir el Número de la Seguridad Social (NSS)
+        // InputType.TYPE_CLASS_TEXT para permitir letras y números en el AN
         val etNss = EditText(ctx).apply {
             hint = "Número de la Seguridad Social"
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
             layoutParams = lp
             if (miRol == "Cuidador") visibility = View.GONE
         }
@@ -261,7 +255,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                 val mapaDatos = hashMapOf<String, Any>(
                     "nombreCompleto" to nuevoNom,
                     "telefono" to nuevoTel,
-                    "nss" to nuevoNss, // Guardamos el NSS en Firebase
+                    "nss" to nuevoNss,
                     "contactoEmergencia" to nuevoEmg
                 )
 
@@ -284,7 +278,6 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
     }
 
     override fun onDestroyView() {
-        // Limpieza del listener en tiempo real al destruir la vista para evitar fugas de memoria
         vinculacionListener?.remove()
         super.onDestroyView()
     }

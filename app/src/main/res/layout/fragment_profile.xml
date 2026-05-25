@@ -1,86 +1,92 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="24dp"
-    android:gravity="center_horizontal"
+    android:fillViewport="true"
     android:background="?android:attr/colorBackground">
 
-    <TextView
-        android:id="@+id/tvTituloPerfil"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Perfil"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:gravity="center"
-        android:layout_marginBottom="16dp"/>
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:gravity="center_horizontal">
 
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/cardQr"
-        style="@style/Widget.Material3.CardView.Elevated"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:cardCornerRadius="16dp"
-        android:layout_marginBottom="16dp">
-        <ImageView
-            android:id="@+id/ivQrCode"
-            android:layout_width="200dp"
-            android:layout_height="200dp"
-            android:layout_margin="16dp"
-            android:scaleType="fitCenter" />
-    </com.google.android.material.card.MaterialCardView>
+        <TextView
+            android:id="@+id/tvTituloPerfil"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Perfil"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:layout_marginBottom="16dp"/>
 
-    <TextView
-        android:id="@+id/tvMiRol"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Rol: Paciente"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="16dp" />
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardQr"
+            style="@style/Widget.Material3.CardView.Elevated"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="16dp"
+            android:layout_marginBottom="16dp">
+            <ImageView
+                android:id="@+id/ivQrCode"
+                android:layout_width="200dp"
+                android:layout_height="200dp"
+                android:layout_margin="16dp"
+                android:scaleType="fitCenter" />
+        </com.google.android.material.card.MaterialCardView>
 
-    <TextView
-        android:id="@+id/tvTituloPacientes"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Mis Pacientes Vinculados:"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:textColor="?attr/colorSecondary"
-        android:visibility="gone" />
+        <TextView
+            android:id="@+id/tvMiRol"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Rol: Paciente"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvPacientes"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_marginTop="8dp"
-        android:visibility="gone" />
+        <TextView
+            android:id="@+id/tvTituloPacientes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Mis Pacientes Vinculados:"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorSecondary"
+            android:visibility="gone" />
 
-    <Button
-        android:id="@+id/btnEscanearQr"
-        android:layout_width="match_parent"
-        style="@style/Widget.Material3.Button.OutlinedButton"
-        android:layout_height="64dp"
-        android:text="Escanear QR de un Paciente"
-        android:textColor="@color/white"
-        android:backgroundTint="@color/md_theme_light_primary"
-        android:textSize="16sp"
-        app:icon="@android:drawable/ic_menu_camera" />
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvPacientes"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginTop="8dp"
+            android:visibility="gone" />
 
-    <Button
-        android:id="@+id/btnCerrarSesion"
-        style="@style/Widget.Material3.Button.OutlinedButton"
-        android:layout_width="match_parent"
-        android:layout_height="64dp"
-        android:layout_marginTop="16dp"
-        android:text="Cerrar Sesión"
-        android:textColor="#D32F2F"
-        app:strokeColor="#D32F2F"
-        app:icon="@android:drawable/ic_lock_power_off"
-        app:iconTint="#D32F2F" />
+        <Button
+            android:id="@+id/btnEscanearQr"
+            android:layout_width="match_parent"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_height="64dp"
+            android:text="Escanear QR de un Paciente"
+            android:textColor="@color/white"
+            android:backgroundTint="@color/md_theme_light_primary"
+            android:textSize="16sp"
+            app:icon="@android:drawable/ic_menu_camera" />
 
-</LinearLayout>
+        <Button
+            android:id="@+id/btnCerrarSesion"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:layout_marginTop="16dp"
+            android:text="Cerrar Sesión"
+            android:textColor="#D32F2F"
+            app:strokeColor="#D32F2F"
+            app:icon="@android:drawable/ic_lock_power_off"
+            app:iconTint="#D32F2F" />
+
+    </LinearLayout>
+</ScrollView>

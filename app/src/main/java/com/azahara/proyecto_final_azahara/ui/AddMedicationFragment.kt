@@ -139,7 +139,7 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
                     if (it.horarios.isNotEmpty()) {
                         listaHoras.clear()
                         listaHoras.addAll(it.horarios.map { horario -> horario.horaToma })
-                        tvHorasSeleccionadas.text = "Horas. Pulsa si quieres eliminar algun horario: ${listaHoras.joinToString(", ")}"
+                        tvHorasSeleccionadas.text = "Pulsa si quieres eliminar algun horario: ${listaHoras.joinToString(", ")}"
                     }
                 }
             }
@@ -156,7 +156,7 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
                 if (!listaHoras.contains(horaFormateada)) {
                     listaHoras.add(horaFormateada)
                     listaHoras.sort()
-                    tvHorasSeleccionadas.text = "Horas. Pulsa si quieres eliminar algun horario: ${listaHoras.joinToString(", ")}"
+                    tvHorasSeleccionadas.text = "Pulsa si quieres eliminar algun horario: ${listaHoras.joinToString(", ")}"
                 }
             }
             timePicker.show(parentFragmentManager, "TIME_PICKER")
@@ -175,7 +175,7 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
                     if (listaHoras.isEmpty()) {
                         tvHorasSeleccionadas.text = "Ninguna hora seleccionada todavía"
                     } else {
-                        tvHorasSeleccionadas.text = "Horas. Pulsa si quieres eliminar algun horario: ${listaHoras.joinToString(", ")}"
+                        tvHorasSeleccionadas.text = "Pulsa si quieres eliminar algun horario: ${listaHoras.joinToString(", ")}"
                     }
                     Toast.makeText(requireContext(), "Hora $horaEliminar eliminada", Toast.LENGTH_SHORT).show()
                 }

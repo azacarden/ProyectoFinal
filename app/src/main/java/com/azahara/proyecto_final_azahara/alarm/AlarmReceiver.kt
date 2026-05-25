@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import com.azahara.proyecto_final_azahara.utils.PreferencesManager
 
 class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -24,7 +25,6 @@ class AlarmReceiver : BroadcastReceiver() {
             val tituloFinal: String
             val mensajeFinal: String
 
-            // Notificación para cuando el cuidador tenga más de un paciente asociado
             if (miRolActual == "Cuidador" && paciente.isNotEmpty() && paciente != miNombre && paciente != "Paciente") {
                 tituloFinal = "💊 Paciente: $paciente"
                 mensajeFinal = "Toma requerida: $nombre\nNotas: $mensaje"
@@ -59,6 +59,9 @@ class AlarmReceiver : BroadcastReceiver() {
     private fun mostrarNotificacion(context: Context, titulo: String, mensaje: String, channelId: String) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
+        // Lee el archivo de accesibilidad para el audio
+        val pm = PreferencesManager(context)
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val nombreCanal = when (channelId) {
                 "canal_medicacion" -> "Alertas de Medicación"
@@ -66,28 +69,37 @@ class AlarmReceiver : BroadcastReceiver() {
                 else -> "Avisos Generales"
             }
 
-            val channel = NotificationChannel(
-                channelId,
-                nombreCanal,
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
+            val importancia = if (pm.sonidosActivados) NotificationManager.IMPORTANCE_HIGH else NotificationManager.IMPORTANCE_LOW
+
+            val channel = NotificationChannel(channelId, nombreCanal, importancia).apply {
                 description = "Canal para los avisos de la aplicación"
-                enableVibration(true)
+                enableVibration(pm.sonidosActivados)
+                if (!pm.sonidosActivados) {
+                    setSound(null, null) // Quitamos sonido al canal en APIs nuevas
+                }
             }
             notificationManager.createNotificationChannel(channel)
         }
 
-        val notification = NotificationCompat.Builder(context, channelId)
+        val notificationBuilder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
             .setContentTitle(titulo)
             .setContentText(mensaje)
             .setStyle(NotificationCompat.BigTextStyle().bigText(mensaje))
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setAutoCancel(true)
-            .setDefaults(NotificationCompat.DEFAULT_ALL)
-            .build()
 
-        notificationManager.notify(System.currentTimeMillis().toInt(), notification)
+        // Configuracion de los osnidos en la app
+        if (pm.sonidosActivados) {
+            notificationBuilder.setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_ALARM)
+                .setDefaults(NotificationCompat.DEFAULT_ALL)
+        } else {
+            notificationBuilder.setPriority(NotificationCompat.PRIORITY_LOW)
+                .setDefaults(0)
+                .setSound(null)
+                .setVibrate(longArrayOf(0))
+        }
+
+        notificationManager.notify(System.currentTimeMillis().toInt(), notificationBuilder.build())
     }
 }

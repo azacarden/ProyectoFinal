@@ -1,8 +1,10 @@
 package com.azahara.proyecto_final_azahara.ui
 
+import android.content.Context
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -42,8 +44,17 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        val prefs = requireContext().getSharedPreferences("SesionUsuario", Context.MODE_PRIVATE)
+
+        // Si se ha marcado "Recordar contraseña" y tiene el UID guardado, salta directo al Dashboard
+        if (prefs.getBoolean("recordar_sesion", false) && !prefs.getString("firebase_uid", "").isNullOrEmpty()) {
+            findNavController().navigate(R.id.action_login_to_dashboard)
+            return
+        }
+
         val etUsuario = view.findViewById<EditText>(R.id.etLoginUsuario)
         val etPass = view.findViewById<EditText>(R.id.etLoginPass)
+        val cbRecordar = view.findViewById<CheckBox>(R.id.cbRecordarSesion) // Captura el Checkbox de la contraseña
         val btnEntrar = view.findViewById<Button>(R.id.btnLoginEntrar)
         val pbLogin = view.findViewById<ProgressBar>(R.id.pbLogin)
         val tvIrRegistro = view.findViewById<TextView>(R.id.tvIrRegistro)
@@ -71,13 +82,14 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
                         is AuthState.Idle -> pbLogin.visibility = View.GONE
                         is AuthState.Loading -> pbLogin.visibility = View.VISIBLE
                         is AuthState.Success -> {
-                            pbLogin.visibility = View.GONE // pbRegistro en RegistroFragment
+                            pbLogin.visibility = View.GONE
 
-                            val prefs = requireContext().getSharedPreferences("SesionUsuario", android.content.Context.MODE_PRIVATE)
                             prefs.edit().apply {
-                                putString("firebase_uid", state.uid) //Guardamos el UID alfanumérico seguro
+                                putString("firebase_uid", state.uid)
                                 putString("usuario_identificado", state.nombreUsuario)
                                 putString("rol_usuario", state.rol)
+                                // 🛠️ Guardamos si quiere ser recordado
+                                putBoolean("recordar_sesion", cbRecordar.isChecked)
                                 apply()
                             }
 

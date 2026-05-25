@@ -1,66 +1,72 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="24dp"
+    android:fillViewport="true"
     android:background="?android:attr/colorBackground">
 
-    <TextView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Ajustes de Accesibilidad"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:textColor="?attr/colorPrimary"
-        android:layout_marginBottom="24dp" />
+        android:orientation="vertical"
+        android:padding="24dp">
 
-    <com.google.android.material.card.MaterialCardView
-        style="@style/Widget.Material3.CardView.Elevated"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        app:cardCornerRadius="12dp">
-
-        <LinearLayout
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:text="Ajustes de Accesibilidad"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorPrimary"
+            android:layout_marginBottom="24dp" />
 
-            <com.google.android.material.materialswitch.MaterialSwitch
-                android:id="@+id/switchTextoGrande"
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.Material3.CardView.Elevated"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="12dp">
+
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Tamaño de fuente grande"
-                android:textSize="18sp"
-                android:layout_marginBottom="16dp" />
+                android:orientation="vertical"
+                android:padding="16dp">
 
-            <com.google.android.material.materialswitch.MaterialSwitch
-                android:id="@+id/switchSonidos"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Sonidos y vibración en alarmas"
-                android:textSize="18sp"
-                android:layout_marginBottom="16dp" />
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchTextoGrande"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Tamaño de fuente grande"
+                    android:textSize="18sp"
+                    android:layout_marginBottom="16dp" />
 
-            <com.google.android.material.materialswitch.MaterialSwitch
-                android:id="@+id/switchAltoContraste"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Modo Alto Contraste"
-                android:textSize="18sp" />
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchSonidos"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Sonidos y vibración en alarmas"
+                    android:textSize="18sp"
+                    android:layout_marginBottom="16dp" />
 
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchAltoContraste"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Modo Alto Contraste"
+                    android:textSize="18sp" />
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Nota: Algunos cambios visuales pueden requerir reiniciar la aplicación para aplicarse por completo."
-        android:textSize="14sp"
-        android:textColor="?attr/colorSecondary"
-        android:layout_marginTop="16dp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
-</LinearLayout>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Nota: Algunos cambios visuales pueden requerir reiniciar la aplicación para aplicarse por completo."
+            android:textSize="14sp"
+            android:textColor="?attr/colorSecondary"
+            android:layout_marginTop="16dp" />
+
+    </LinearLayout>
+</ScrollView>
