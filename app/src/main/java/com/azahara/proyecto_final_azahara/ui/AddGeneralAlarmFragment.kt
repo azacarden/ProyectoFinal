@@ -7,7 +7,10 @@ import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
@@ -27,20 +30,25 @@ import java.util.Locale
 
 class AddGeneralAlarmFragment : Fragment(R.layout.fragment_add_general_alarm) {
 
-    private lateinit var viewModel: GeneralAlarmViewModel
+    // CORREGIDO: Usamos la factoría
+    private val viewModel: GeneralAlarmViewModel by viewModels {
+        object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                val dao = AppDatabase.getDatabase(requireContext()).alarmaGeneralDao()
+                @Suppress("UNCHECKED_CAST")
+                return GeneralAlarmViewModel(dao) as T
+            }
+        }
+    }
+
     private val calendarioAlarma = Calendar.getInstance()
     private var fechaSeleccionada = false
     private var horaSeleccionada = false
-
-    // Si viene un ID, estamos en Modo Edición
     private var idAlarmaEditar: Int = -1
-    private var alarmaActivaOriginal: Boolean = true // Por defecto, si es nueva, está encendida
+    private var alarmaActivaOriginal: Boolean = true
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        val dao = AppDatabase.getDatabase(requireContext()).alarmaGeneralDao()
-        viewModel = GeneralAlarmViewModel(dao)
 
         idAlarmaEditar = arguments?.getInt("ALARMA_ID_EDITAR", -1) ?: -1
 
@@ -51,15 +59,14 @@ class AddGeneralAlarmFragment : Fragment(R.layout.fragment_add_general_alarm) {
         val btnHora = view.findViewById<Button>(R.id.btnElegirHoraAlarma)
         val btnGuardar = view.findViewById<Button>(R.id.btnGuardarAlarmaGeneral)
 
-        // MODO EDICIÓN
         if (idAlarmaEditar != -1) {
             tvTituloPantalla.text = "Modificar Alarma"
             btnGuardar.text = "Guardar Cambios"
 
             viewLifecycleOwner.lifecycleScope.launch {
-                // Corregido: getAlarmaById con su tipografía correcta
+                val daoLectura = AppDatabase.getDatabase(requireContext()).alarmaGeneralDao()
                 val alarma: com.azahara.proyecto_final_azahara.model.AlarmaGeneral? = withContext(Dispatchers.IO) {
-                    dao.getAlarmaById(idAlarmaEditar)
+                    daoLectura.getAlarmaById(idAlarmaEditar)
                 }
                 alarma?.let {
                     etTitulo.setText(it.titulo)
@@ -78,11 +85,10 @@ class AddGeneralAlarmFragment : Fragment(R.layout.fragment_add_general_alarm) {
             }
         }
 
-        // Calendario
         btnFecha.setOnClickListener {
             val datePicker = MaterialDatePicker.Builder.datePicker()
                 .setTitleText("Día de la alarma")
-                .setSelection(calendarioAlarma.timeInMillis) // Corregido: calendarioAlarma
+                .setSelection(calendarioAlarma.timeInMillis)
                 .build()
 
             datePicker.addOnPositiveButtonClickListener { milisegundos: Long ->
@@ -94,7 +100,6 @@ class AddGeneralAlarmFragment : Fragment(R.layout.fragment_add_general_alarm) {
             datePicker.show(parentFragmentManager, "DATE_PICKER")
         }
 
-        // Reloj
         btnHora.setOnClickListener {
             val timePicker = MaterialTimePicker.Builder()
                 .setTimeFormat(TimeFormat.CLOCK_24H)
@@ -113,7 +118,6 @@ class AddGeneralAlarmFragment : Fragment(R.layout.fragment_add_general_alarm) {
             timePicker.show(parentFragmentManager, "TIME_PICKER")
         }
 
-        // Guardado
         btnGuardar.setOnClickListener {
             val titulo = etTitulo.text.toString().trim()
             val notas = etNotas.text.toString().trim()
@@ -133,7 +137,6 @@ class AddGeneralAlarmFragment : Fragment(R.layout.fragment_add_general_alarm) {
             }
         }
 
-        // Observar resultado de Room
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.guardadoExitoso.collect { exito: Boolean? ->

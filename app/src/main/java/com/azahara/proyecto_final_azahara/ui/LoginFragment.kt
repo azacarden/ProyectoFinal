@@ -10,17 +10,35 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.azahara.proyecto_final_azahara.R
+import com.azahara.proyecto_final_azahara.data.local.AppDatabase
+import com.azahara.proyecto_final_azahara.repository.UserRepository
 import com.azahara.proyecto_final_azahara.viewmodel.AuthState
 import com.azahara.proyecto_final_azahara.viewmodel.AuthViewModel
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
 
 class LoginFragment : Fragment(R.layout.fragment_login) {
 
-    private val viewModel: AuthViewModel by viewModels()
+    // CORREGIDO: Usamos la factoría para construir el ViewModel con sus dependencias
+    private val viewModel: AuthViewModel by viewModels {
+        object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                val dao = AppDatabase.getDatabase(requireContext()).usuarioDao()
+                val auth = FirebaseAuth.getInstance()
+                val firestore = FirebaseFirestore.getInstance()
+                val repo = UserRepository(dao, auth, firestore)
+                @Suppress("UNCHECKED_CAST")
+                return AuthViewModel(repo) as T
+            }
+        }
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
