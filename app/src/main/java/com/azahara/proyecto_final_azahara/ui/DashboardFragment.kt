@@ -106,7 +106,13 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         }
 
         view.findViewById<MaterialCardView>(R.id.cardCuidadores).setOnClickListener {
-            val bundle = Bundle().apply { putString("PACIENTE_UID", obtenerUidDestino()) }
+            val bundle = Bundle().apply {
+                putString("PACIENTE_UID", obtenerUidDestino())
+                // ¡AQUÍ ESTÁ EL CAMBIO! Añadimos el flag para diferenciar el origen si es Paciente
+                if (miRol == "Paciente") {
+                    putString("ORIGEN", "CARD_CUIDADORES")
+                }
+            }
             findNavController().navigate(R.id.action_dashboard_to_profile, bundle)
         }
 
@@ -166,7 +172,6 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
             }
     }
 
-    // 🛠️ ¡NUEVA FUNCIÓN! Borra la vinculación de Firestore de forma limpia
     private fun desvincularPacienteDeLaNube(pacienteUid: String, pacienteNombre: String) {
         db.collection("vinculaciones")
             .whereEqualTo("cuidadorUid", miUid)
@@ -177,7 +182,7 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
                     documento.reference.delete()
                 }
                 Toast.makeText(requireContext(), "$pacienteNombre desvinculado con éxito", Toast.LENGTH_SHORT).show()
-                cargarListaPacientes() // Refrescamos la lista de la pantalla
+                cargarListaPacientes()
             }
     }
 
@@ -223,9 +228,7 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val (uid, nombre) = pacientes[position]
             holder.tvNombre.text = nombre
-            holder.itemView.setOnClickListener {
-
-                onSelect(uid, nombre) }
+            holder.itemView.setOnClickListener { onSelect(uid, nombre) }
 
             holder.itemView.setOnLongClickListener {
                 MaterialAlertDialogBuilder(requireContext())
