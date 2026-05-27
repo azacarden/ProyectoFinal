@@ -53,7 +53,7 @@
                 android:layout_weight="1"
                 android:layout_marginEnd="8dp"
                 android:text="Elegir Fecha"
-                app:icon="@android:drawable/ic_menu_my_calendar" />
+                app:icon="@drawable/calendar" />
 
             <Button
                 android:id="@+id/btnElegirHoraAlarma"
@@ -63,7 +63,7 @@
                 android:layout_weight="1"
                 android:layout_marginStart="8dp"
                 android:text="Elegir Hora"
-                app:icon="@android:drawable/ic_menu_recent_history" />
+                app:icon="@drawable/alarm" />
         </LinearLayout>
 
         <com.google.android.material.textfield.TextInputLayout

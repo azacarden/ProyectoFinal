@@ -17,7 +17,7 @@
         android:textSize="18sp"
         android:textStyle="bold"
         android:textColor="?attr/colorPrimary"
-        app:drawableStartCompat="@android:drawable/ic_menu_myplaces"
+        app:drawableStartCompat="@drawable/person"
         android:drawablePadding="16dp"/>
 
 </com.google.android.material.card.MaterialCardView>

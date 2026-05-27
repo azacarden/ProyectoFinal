@@ -37,7 +37,7 @@
                 android:layout_alignParentEnd="true"
                 android:layout_centerInParent="true"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@android:drawable/ic_menu_delete"
+                android:src="@drawable/delete"
                 app:tint="#D32F2F" />
         </RelativeLayout>
 
@@ -51,7 +51,7 @@
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
-                android:src="@android:drawable/ic_menu_recent_history"
+                android:src="@drawable/alarm"
                 app:tint="?attr/colorSecondary" />
 
             <TextView
@@ -99,7 +99,7 @@
             android:layout_marginTop="12dp"
             android:text="Ver Prospecto Oficial"
             android:visibility="gone"
-            app:icon="@android:drawable/ic_dialog_info" />
+            app:icon="@drawable/description" />
 
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

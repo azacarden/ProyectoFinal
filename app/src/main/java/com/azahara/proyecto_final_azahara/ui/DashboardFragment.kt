@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -17,6 +16,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.azahara.proyecto_final_azahara.R
 import com.azahara.proyecto_final_azahara.data.local.AppDatabase
+import com.google.android.material.button.MaterialButton // 🛠️ Importación del botón nativo
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.firestore.FirebaseFirestore
@@ -39,13 +39,16 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
     private var avisoNotificacionesMostrado = false
 
     private lateinit var tvSaludo: TextView
-    private lateinit var btnVolverPacientes: Button
+    private lateinit var btnVolverPacientes: MaterialButton
     private lateinit var llCuidadorHub: LinearLayout
     private lateinit var svDashboardSalud: View
     private lateinit var rvPacientes: RecyclerView
 
     private lateinit var ivIconoCuidadores: ImageView
     private lateinit var tvTituloCuidadores: TextView
+
+    private lateinit var tvTituloMedicacion: TextView
+    private lateinit var tvTituloCitas: TextView
 
     private val barcodeLauncher = registerForActivityResult(ScanContract()) { result ->
         if (result.contents == null) {
@@ -72,6 +75,9 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         ivIconoCuidadores = view.findViewById(R.id.ivIconoCuidadores)
         tvTituloCuidadores = view.findViewById(R.id.tvTituloCuidadores)
 
+        tvTituloMedicacion = view.findViewById(R.id.tvTituloMedicacion)
+        tvTituloCitas = view.findViewById(R.id.tvTituloCitas)
+
         view.findViewById<MaterialCardView>(R.id.cardEscanearPaciente).setOnClickListener {
             val options = ScanOptions().apply {
                 setDesiredBarcodeFormats(ScanOptions.QR_CODE)
@@ -87,7 +93,6 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
             evaluarLayoutPorEstados()
         }
 
-        // Aseguramos que el QR es de un paciente
         view.findViewById<MaterialCardView>(R.id.cardMedicacion).setOnClickListener {
             val bundle = Bundle().apply {
                 putString("PACIENTE_UID", obtenerUidDestino())
@@ -96,6 +101,7 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
             findNavController().navigate(R.id.action_dashboard_to_medicationList, bundle)
         }
 
+        // Aseguramos que es el QR de un paciente
         view.findViewById<MaterialCardView>(R.id.cardAdd).setOnClickListener {
             val bundle = Bundle().apply {
                 putString("PACIENTE_UID", obtenerUidDestino())
@@ -155,8 +161,11 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
                 svDashboardSalud.visibility = View.VISIBLE
                 btnVolverPacientes.visibility = View.VISIBLE
 
-                ivIconoCuidadores.setImageResource(android.R.drawable.ic_menu_info_details)
+                ivIconoCuidadores.setImageResource(R.drawable.account)
                 tvTituloCuidadores.text = "Info de paciente"
+
+                tvTituloMedicacion.text = "Medicaciones"
+                tvTituloCitas.text = "Citas médicas"
 
                 comprobarTareasPendientesDeHoy()
             }
@@ -166,14 +175,17 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
             svDashboardSalud.visibility = View.VISIBLE
             btnVolverPacientes.visibility = View.GONE
 
-            ivIconoCuidadores.setImageResource(android.R.drawable.ic_menu_share)
+            ivIconoCuidadores.setImageResource(R.drawable.group)
             tvTituloCuidadores.text = "Cuidadores"
+
+            tvTituloMedicacion.text = "Mi medicación"
+            tvTituloCitas.text = "Mis citas médicas"
 
             comprobarTareasPendientesDeHoy()
         }
     }
 
-    // Lanza una Notificación Push en el panel de Android
+    // lanza una notificacion push en android
     private fun comprobarTareasPendientesDeHoy() {
         if (avisoNotificacionesMostrado) return
 
@@ -207,7 +219,7 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
                     .setAutoCancel(true)
                     .build()
 
-                notificationManager.notify(999, notification) // Lanzamos el aviso al panel
+                notificationManager.notify(999, notification)
             }
         }
     }

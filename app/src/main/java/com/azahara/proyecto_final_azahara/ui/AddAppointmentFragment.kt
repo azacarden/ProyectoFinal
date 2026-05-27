@@ -26,7 +26,6 @@ import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
@@ -36,7 +35,6 @@ import java.util.Locale
 
 class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
 
-    // Instanciación correcta del ViewModel a través de su Repositorio unificado
     private val viewModel: AppointmentViewModel by viewModels {
         object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -71,6 +69,7 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
         val etMotivo = view.findViewById<EditText>(R.id.etTituloCita)
         val etMedico = view.findViewById<EditText>(R.id.etMedico)
         val etEspecialidad = view.findViewById<EditText>(R.id.etEspecialidad)
+        val etCentroHospital = view.findViewById<EditText>(R.id.etCentroHospital)
         val etNotas = view.findViewById<EditText>(R.id.etNotasCita)
         val btnFecha = view.findViewById<Button>(R.id.btnElegirFecha)
         val btnHora = view.findViewById<Button>(R.id.btnElegirHora)
@@ -98,11 +97,15 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
 
             viewLifecycleOwner.lifecycleScope.launch {
                 val daoLectura = AppDatabase.getDatabase(requireContext()).citaMedicaDao()
-                val cita = withContext(Dispatchers.IO) { daoLectura.getCitaById(idCitaEditar!!) }
+                val cita = withContext(kotlinx.coroutines.Dispatchers.IO) { daoLectura.getCitaById(idCitaEditar!!) }
                 cita?.let {
                     etMotivo.setText(it.motivo)
                     etMedico.setText(it.medico)
                     etEspecialidad.setText(it.especialidad)
+
+
+                    etCentroHospital.setText(it.centroHospital)
+
                     etNotas.setText(it.notas)
 
                     calendarioCita.timeInMillis = it.fechaHora
@@ -113,6 +116,11 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
                     val sdfHora = SimpleDateFormat("HH:mm", Locale.getDefault())
                     btnFecha.text = sdfFecha.format(Date(it.fechaHora))
                     btnHora.text = sdfHora.format(Date(it.fechaHora))
+
+                    val minutos = it.recordatorioPrevio
+                    val textoRecordatorio = opcionesRecordatorio.entries.find { entry -> entry.value == minutos }?.key
+                        ?: "$minutos minutos antes"
+                    actvReminder.setText(textoRecordatorio, false)
                 }
             }
         }
@@ -133,10 +141,14 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
         }
 
         btnHora.setOnClickListener {
+            val horaActual = Calendar.getInstance()
+            val horaMostrar = if (horaSeleccionada) calendarioCita.get(Calendar.HOUR_OF_DAY) else horaActual.get(Calendar.HOUR_OF_DAY)
+            val minutoMostrar = if (horaSeleccionada) calendarioCita.get(Calendar.MINUTE) else horaActual.get(Calendar.MINUTE)
+
             val timePicker = MaterialTimePicker.Builder()
                 .setTimeFormat(TimeFormat.CLOCK_24H)
-                .setHour(calendarioCita.get(Calendar.HOUR_OF_DAY))
-                .setMinute(calendarioCita.get(Calendar.MINUTE))
+                .setHour(horaMostrar)
+                .setMinute(minutoMostrar)
                 .setTitleText("Seleccionar hora")
                 .build()
 
@@ -154,6 +166,7 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
             val motivo = etMotivo.text.toString().trim()
             val medico = etMedico.text.toString().trim()
             val especialidad = etEspecialidad.text.toString().trim()
+            val centroHospital = etCentroHospital.text.toString().trim()
             val notas = etNotas.text.toString().trim()
             val selectedText = actvReminder.text.toString()
 
@@ -162,7 +175,7 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
                 return@setOnClickListener
             }
 
-            val error = viewModel.validarCita(motivo, medico, especialidad, calendarioCita.timeInMillis)
+            val error = viewModel.validarCita(motivo, medico, especialidad, centroHospital, calendarioCita.timeInMillis)
             if (error != null) {
                 Toast.makeText(requireContext(), error, Toast.LENGTH_LONG).show()
                 return@setOnClickListener
@@ -179,16 +192,14 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
                 return@setOnClickListener
             }
 
-            // Extraemos el UID alfanumérico seguro para asociar la cita en la nube
             val prefs = requireContext().getSharedPreferences("SesionUsuario", android.content.Context.MODE_PRIVATE)
             val miUidLocal = prefs.getString("firebase_uid", "") ?: ""
             val miNombre = prefs.getString("usuario_identificado", "Paciente") ?: "Paciente"
 
-            // Redirección inteligente de carpeta cloud
             val targetUid = arguments?.getString("PACIENTE_UID") ?: miUidLocal
 
             if (idCitaEditar == null) {
-                viewModel.guardarCita(motivo, medico, especialidad, calendarioCita.timeInMillis, notas, targetUid, "Añadido por: $miNombre")
+                viewModel.guardarCita(motivo, medico, especialidad, centroHospital, calendarioCita.timeInMillis, notas, targetUid, "Añadido por: $miNombre")
             } else {
                 val helper = AlarmHelper(requireContext())
                 val citaAntigua = CitaMedica(
@@ -196,13 +207,14 @@ class AddAppointmentFragment : Fragment(R.layout.fragment_add_appointment) {
                     motivo = "",
                     medico = "",
                     especialidad = "",
+                    centroHospital = "",
                     fechaHora = 0L,
                     notas = "",
                     recordatorioPrevio = 60
                 )
                 helper.cancelarAlarmaCita(citaAntigua)
 
-                viewModel.actualizarCita(idCitaEditar!!, motivo, medico, especialidad, calendarioCita.timeInMillis, notas, targetUid, "Añadido por: $miNombre")
+                viewModel.actualizarCita(idCitaEditar!!, motivo, medico, especialidad, centroHospital, calendarioCita.timeInMillis, notas, targetUid, "Añadido por: $miNombre")
             }
         }
 

@@ -196,7 +196,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Añadir Hora de Toma"
-                app:icon="@android:drawable/ic_menu_recent_history" />
+                app:icon="@drawable/alarm" />
 
             <TextView
                 android:id="@+id/tvHorasSeleccionadas"

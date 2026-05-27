@@ -10,6 +10,7 @@ data class CitaMedica(
     val motivo: String,
     val medico: String,
     val especialidad: String,
+    val centroHospital: String = "",
     val fechaHora: Long,
     val notas: String,
     val recordatorioPrevio: Int,

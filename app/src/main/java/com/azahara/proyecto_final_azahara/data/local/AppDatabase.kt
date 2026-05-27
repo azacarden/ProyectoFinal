@@ -22,7 +22,7 @@ import com.azahara.proyecto_final_azahara.model.Usuario
     ],
 
     // Cada vez que añadimos algo al modelo, debemos aumentar la versió. Si no fallará
-    version = 13,
+    version = 14,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

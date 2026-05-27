@@ -5,13 +5,13 @@
     <item
         android:id="@+id/action_perfil_menu"
         android:title="Perfil"
-        android:icon="@android:drawable/ic_menu_myplaces"
+        android:icon="@drawable/account"
         app:showAsAction="ifRoom" />
 
     <item
         android:id="@+id/action_ajustes_menu"
         android:title="Ajustes"
-        android:icon="@android:drawable/ic_menu_preferences"
+        android:icon="@drawable/settings"
         app:showAsAction="ifRoom" />
 
 </menu>

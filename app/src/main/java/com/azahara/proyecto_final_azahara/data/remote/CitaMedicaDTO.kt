@@ -5,6 +5,7 @@ data class CitaMedicaDTO(
     val motivo: String = "",
     val medico: String = "",
     val especialidad: String = "",
+    val centroHospital: String = "",
     val fechaHora: Long = 0L,
     val notas: String = "",
     val recordatorioPrevio: Int = 60,

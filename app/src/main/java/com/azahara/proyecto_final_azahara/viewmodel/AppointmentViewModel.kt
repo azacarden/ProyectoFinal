@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 
 class AppointmentViewModel(
     private val citaDao: CitaMedicaDao,
-    private val appointmentRepository: AppointmentRepository // Inyecta el repositorio
+    private val appointmentRepository: AppointmentRepository
 ) : ViewModel() {
 
     private val _guardadoExitoso = MutableStateFlow<Boolean?>(null)
@@ -36,23 +36,24 @@ class AppointmentViewModel(
 
     var ultimaCitaGuardada: CitaMedica? = null
 
-    fun validarCita(motivo: String, medico: String, especialidad: String, fechaHoraMilis: Long): String? {
+    // 🛠️ ACTUALIZADO CON VALIDACIÓN DE CENTRO HOSPITALARIO
+    fun validarCita(motivo: String, medico: String, especialidad: String, centroHospital: String, fechaHoraMilis: Long): String? {
         if (motivo.isBlank()) return "El motivo de la cita es obligatorio."
         if (medico.isBlank()) return "El nombre del médico es obligatorio."
         if (especialidad.isBlank()) return "La especialidad es obligatoria."
+        if (centroHospital.isBlank()) return "El nombre del centro u hospital es obligatorio."
         if (fechaHoraMilis < System.currentTimeMillis()) return "No puedes programar una cita en el pasado."
         return null
     }
 
-    // Recibe el usuarioUid para impactar en Firestore
-    // Modifica las funciones guardarCita y actualizarCita para recibir la firma
-    fun guardarCita(motivo: String, medico: String, especialidad: String, fechaHoraMilis: Long, notas: String, usuarioUid: String, creadoPor: String) {
+    fun guardarCita(motivo: String, medico: String, especialidad: String, centroHospital: String, fechaHoraMilis: Long, notes: String, usuarioUid: String, creadoPor: String) {
         viewModelScope.launch {
             try {
                 val nuevaCita = CitaMedica(
                     motivo = motivo, medico = medico, especialidad = especialidad,
-                    fechaHora = fechaHoraMilis, notas = notas, recordatorioPrevio = 60,
-                    creadoPorNombre = creadoPor // <--- NUEVO
+                    centroHospital = centroHospital, // 🛠️ ASIGNACIÓN NUEVA
+                    fechaHora = fechaHoraMilis, notas = notes, recordatorioPrevio = 60,
+                    creadoPorNombre = creadoPor
                 )
                 appointmentRepository.guardarCita(nuevaCita, usuarioUid)
                 ultimaCitaGuardada = nuevaCita
@@ -61,13 +62,14 @@ class AppointmentViewModel(
         }
     }
 
-    fun actualizarCita(id: String, motivo: String, medico: String, especialidad: String, fechaHoraMilis: Long, notas: String, usuarioUid: String, creadoPor: String) {
+    fun actualizarCita(id: String, motivo: String, medico: String, especialidad: String, centroHospital: String, fechaHoraMilis: Long, notes: String, usuarioUid: String, creadoPor: String) {
         viewModelScope.launch {
             try {
                 val citaModificada = CitaMedica(
                     id = id, motivo = motivo, medico = medico, especialidad = especialidad,
-                    fechaHora = fechaHoraMilis, notas = notas, recordatorioPrevio = 60,
-                    creadoPorNombre = creadoPor // <--- NUEVO
+                    centroHospital = centroHospital, // 🛠️ ASIGNACIÓN NUEVA
+                    fechaHora = fechaHoraMilis, notas = notes, recordatorioPrevio = 60,
+                    creadoPorNombre = creadoPor
                 )
                 appointmentRepository.guardarCita(citaModificada, usuarioUid)
                 ultimaCitaGuardada = citaModificada

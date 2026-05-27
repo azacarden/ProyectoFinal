@@ -16,7 +16,6 @@
         <ImageView
             android:layout_width="120dp"
             android:layout_height="120dp"
-            android:src="@drawable/inicio"
             android:layout_marginBottom="24dp"/>
 
         <TextView
@@ -33,7 +32,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Tu Nombre de Usuario"
-            app:startIconDrawable="@android:drawable/ic_menu_myplaces"
+            app:startIconDrawable="@drawable/person"
             android:layout_marginBottom="16dp">
 
             <com.google.android.material.textfield.TextInputEditText
@@ -48,7 +47,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Contraseña"
-            app:startIconDrawable="@android:drawable/ic_lock_lock"
+            app:startIconDrawable="@drawable/lock"
             app:passwordToggleEnabled="true"
             android:layout_marginBottom="16dp">
             <com.google.android.material.textfield.TextInputEditText

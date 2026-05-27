@@ -17,14 +17,17 @@
         android:textStyle="bold"
         android:textColor="?attr/colorPrimary" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnVolverPacientes"
-        style="@style/Widget.Material3.Button.TextButton"
+        style="@style/Widget.Material3.Button.OutlinedButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:text="⬅️ Cambiar de Paciente"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="12dp"
+        android:text="Cambiar de Paciente"
+        app:icon="@drawable/sync"
         android:textColor="?attr/colorSecondary"
+        app:strokeColor="?attr/colorSecondary"
         android:visibility="gone" />
 
     <LinearLayout
@@ -54,7 +57,7 @@
                 <ImageView
                     android:layout_width="56dp"
                     android:layout_height="56dp"
-                    android:src="@android:drawable/ic_menu_camera"
+                    android:src="@drawable/qr_code"
                     app:tint="?attr/colorPrimary" />
 
                 <TextView
@@ -116,7 +119,7 @@
                     <ImageView
                         android:layout_width="64dp"
                         android:layout_height="64dp"
-                        android:src="@android:drawable/ic_menu_agenda"
+                        android:src="@drawable/pill"
                         app:tint="?attr/colorPrimary" />
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -124,6 +127,7 @@
                         android:orientation="vertical"
                         android:layout_marginStart="16dp">
                         <TextView
+                            android:id="@+id/tvTituloMedicacion"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Mi medicación"
@@ -158,7 +162,7 @@
                     <ImageView
                         android:layout_width="64dp"
                         android:layout_height="64dp"
-                        android:src="@android:drawable/ic_menu_my_calendar"
+                        android:src="@drawable/calendar"
                         app:tint="?attr/colorPrimary" />
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -166,6 +170,7 @@
                         android:orientation="vertical"
                         android:layout_marginStart="16dp">
                         <TextView
+                            android:id="@+id/tvTituloCitas"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Mis citas médicas"
@@ -197,6 +202,7 @@
                     app:layout_columnWeight="1"
                     android:layout_margin="8dp"
                     app:cardCornerRadius="24dp">
+
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
@@ -205,16 +211,17 @@
                         <ImageView
                             android:layout_width="48dp"
                             android:layout_height="48dp"
-                            android:src="@android:drawable/ic_input_add"
+                            android:src="@drawable/add"
                             app:tint="?attr/colorPrimary" />
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Nueva Toma"
+                            android:text="      Añadir \nMedicamento"
                             android:textSize="18sp"
                             android:textStyle="bold"
                             android:layout_marginTop="8dp"/>
                     </LinearLayout>
+
                 </com.google.android.material.card.MaterialCardView>
 
                 <com.google.android.material.card.MaterialCardView
@@ -233,7 +240,7 @@
                         <ImageView
                             android:layout_width="48dp"
                             android:layout_height="48dp"
-                            android:src="@android:drawable/ic_menu_recent_history"
+                            android:src="@drawable/history"
                             app:tint="?attr/colorPrimary" />
                         <TextView
                             android:layout_width="wrap_content"
@@ -261,7 +268,7 @@
                         <ImageView
                             android:layout_width="48dp"
                             android:layout_height="48dp"
-                            android:src="@android:drawable/ic_menu_my_calendar"
+                            android:src="@drawable/calendar"
                             app:tint="?attr/colorPrimary" />
                         <TextView
                             android:layout_width="wrap_content"
@@ -281,6 +288,7 @@
                     app:layout_columnWeight="1"
                     android:layout_margin="8dp"
                     app:cardCornerRadius="24dp">
+
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
@@ -290,7 +298,7 @@
                             android:id="@+id/ivIconoCuidadores"
                             android:layout_width="48dp"
                             android:layout_height="48dp"
-                            android:src="@android:drawable/ic_menu_share"
+                            android:src="@drawable/group"
                             app:tint="?attr/colorPrimary" />
                         <TextView
                             android:id="@+id/tvTituloCuidadores"

@@ -56,7 +56,13 @@ class AddMedicationViewModel(
                     _uiState.value = CimaUiState.SuccessList(resultadosFiltrados)
                 }
             } catch (e: Exception) {
-                _uiState.value = CimaUiState.Error("Error de conexión: ${e.localizedMessage}")
+                // Diferenciamos si es falta de internet o un error del servidor
+                // El único problema es que se guarda con el nombre tal cual, no guarda la ficha del producto
+                if (e is java.net.UnknownHostException || e is java.net.ConnectException) {
+                    _uiState.value = CimaUiState.Error("Sin conexión a Internet. Escribe el nombre del medicamento a mano y guárdalo.")
+                } else {
+                    _uiState.value = CimaUiState.Error("Error del servidor CIMA: Vuelve a intentarlo más tarde.")
+                }
             }
         }
     }

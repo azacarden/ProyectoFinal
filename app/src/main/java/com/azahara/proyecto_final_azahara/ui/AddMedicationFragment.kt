@@ -31,6 +31,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.Calendar
 import java.util.Locale
 
 class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
@@ -139,15 +140,19 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
                     if (it.horarios.isNotEmpty()) {
                         listaHoras.clear()
                         listaHoras.addAll(it.horarios.map { horario -> horario.horaToma })
-                        tvHorasSeleccionadas.text = "Pulsa si quieres eliminar algun horario: ${listaHoras.joinToString(", ")}"
+                        tvHorasSeleccionadas.text = "Pulsa aquí si quieres eliminar algun horario: ${listaHoras.joinToString(", ")}"
                     }
                 }
             }
         }
 
         btnAgregarHora.setOnClickListener {
+            val horaActual = Calendar.getInstance()
+
             val timePicker = MaterialTimePicker.Builder()
                 .setTimeFormat(TimeFormat.CLOCK_24H)
+                .setHour(horaActual.get(Calendar.HOUR_OF_DAY)) // Asigna la hora actual
+                .setMinute(horaActual.get(Calendar.MINUTE))    // Asigna el minuto actual
                 .setTitleText("Añadir hora de toma")
                 .build()
 
@@ -156,7 +161,7 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
                 if (!listaHoras.contains(horaFormateada)) {
                     listaHoras.add(horaFormateada)
                     listaHoras.sort()
-                    tvHorasSeleccionadas.text = "Pulsa si quieres eliminar algun horario: ${listaHoras.joinToString(", ")}"
+                    tvHorasSeleccionadas.text = "Pulsa aquí si quieres eliminar algun horario: ${listaHoras.joinToString(", ")}"
                 }
             }
             timePicker.show(parentFragmentManager, "TIME_PICKER")
@@ -175,7 +180,7 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
                     if (listaHoras.isEmpty()) {
                         tvHorasSeleccionadas.text = "Ninguna hora seleccionada todavía"
                     } else {
-                        tvHorasSeleccionadas.text = "Pulsa si quieres eliminar algun horario: ${listaHoras.joinToString(", ")}"
+                        tvHorasSeleccionadas.text = "Pulsa aquí si quieres eliminar algun horario: ${listaHoras.joinToString(", ")}"
                     }
                     Toast.makeText(requireContext(), "Hora $horaEliminar eliminada", Toast.LENGTH_SHORT).show()
                 }

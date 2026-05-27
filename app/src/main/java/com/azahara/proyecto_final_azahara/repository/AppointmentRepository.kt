@@ -25,10 +25,11 @@ class AppointmentRepository(
                 motivo = cita.motivo,
                 medico = cita.medico,
                 especialidad = cita.especialidad,
+                centroHospital = cita.centroHospital, // 🛠️ NUEVO MAPEO REPOSITORY -> DTO
                 fechaHora = cita.fechaHora,
                 notas = cita.notas,
                 recordatorioPrevio = cita.recordatorioPrevio,
-                creadoPorNombre = cita.creadoPorNombre // <--- NUEVO
+                creadoPorNombre = cita.creadoPorNombre
             )
 
             firestore.collection("usuarios")
@@ -69,6 +70,7 @@ class AppointmentRepository(
                             motivo = dto.motivo,
                             medico = dto.medico,
                             especialidad = dto.especialidad,
+                            centroHospital = dto.centroHospital, // 🛠️ NUEVO MAPEO DTO -> REPOSITORY
                             fechaHora = dto.fechaHora,
                             notas = dto.notas,
                             recordatorioPrevio = dto.recordatorioPrevio,

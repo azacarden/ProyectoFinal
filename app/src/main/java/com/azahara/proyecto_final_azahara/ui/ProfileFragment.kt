@@ -1,19 +1,24 @@
 package com.azahara.proyecto_final_azahara.ui
 
 import android.graphics.Bitmap
+import android.graphics.Typeface
 import android.os.Bundle
-import android.text.Html
+import android.text.SpannableStringBuilder
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
+import android.text.style.StyleSpan
 import android.view.View
-import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.azahara.proyecto_final_azahara.R
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
@@ -38,10 +43,10 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         miUid = prefs.getString("firebase_uid", "") ?: ""
 
         val ivQrCode = view.findViewById<ImageView>(R.id.ivQrCode)
-        val btnAccionDinamica = view.findViewById<Button>(R.id.btnEscanearQr)
+        val btnAccionDinamica = view.findViewById<MaterialButton>(R.id.btnEscanearQr)
+        val btnCerrarSesion = view.findViewById<MaterialButton>(R.id.btnCerrarSesion)
         val tvTituloFragment = view.findViewById<TextView>(R.id.tvTituloPerfil)
         val tvMiRol = view.findViewById<TextView>(R.id.tvMiRol)
-        val btnCerrarSesion = view.findViewById<Button>(R.id.btnCerrarSesion)
 
         view.findViewById<TextView>(R.id.tvTituloPacientes)?.visibility = View.GONE
         view.findViewById<RecyclerView>(R.id.rvPacientes)?.visibility = View.GONE
@@ -61,6 +66,9 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                 .show()
         }
 
+        // Obtenemos el color directamente desde tus recursos de colores de forma segura
+        val colorMarca = ContextCompat.getColor(requireContext(), R.color.md_theme_light_primary)
+
         if (miRol == "Cuidador") {
             if (targetPacienteUid != null && targetPacienteUid != miUid) {
                 view.findViewById<View>(R.id.cardQr)?.visibility = View.GONE
@@ -74,17 +82,19 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                             val correo = doc.getString("correo") ?: "No aportado"
                             val telefono = doc.getString("telefono") ?: "No registrado"
                             val emergencia = doc.getString("contactoEmergencia") ?: "No registrado"
+                            val nombreEmergencia = doc.getString("nombreContactoEmergencia") ?: "No registrado"
                             val nss = doc.getString("nss") ?: "No registrado"
 
                             tvTituloFragment.text = "Expediente de Salud"
 
-                            val htmlContenido = "<b>👤 Paciente:</b> $nombre<br><br>" +
-                                    "<b>📧 Correo:</b> $correo<br><br>" +
-                                    "<b>📞 Teléfono Personal:</b> $telefono<br><br>" +
-                                    "<b>🪪 Nº Seguridad Social:</b> $nss<br><br>" +
-                                    "<b>🚨 Emergencia / Tutor:</b> $emergencia"
-
-                            tvMiRol.text = Html.fromHtml(htmlContenido, Html.FROM_HTML_MODE_LEGACY)
+                            tvMiRol.text = formatearFichaElegante(colorMarca,
+                                "Paciente:" to nombre,
+                                "Correo electrónico:" to correo,
+                                "Teléfono personal:" to telefono,
+                                "Número de Seguridad Social:" to nss,
+                                "Nombre del contacto de emergencia:" to nombreEmergencia,
+                                "Teléfono del contacto de emergencia / Tutor:" to emergencia
+                            )
                         }
                     }
             } else {
@@ -94,10 +104,11 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
 
                 btnAccionDinamica.apply {
                     visibility = View.VISIBLE
-                    text = "Editar Mis Datos de Contacto"
+                    text = "Editar Mis Datos"
+                    setIconResource(android.R.drawable.ic_menu_edit)
                     setOnClickListener { mostrarDialogoModificarDatos(tvMiRol) }
                 }
-                renderizarDatosPropiosLocal(tvMiRol)
+                renderizarDatosPropiosLocal(tvMiRol, colorMarca)
             }
         } else {
             if (origenVista == "CARD_CUIDADORES") {
@@ -107,7 +118,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                 btnCerrarSesion.visibility = View.GONE
 
                 tvTituloFragment.text = "Mi Cuidador Asignado"
-                renderizarDatosDelCuidadorDelPaciente(tvMiRol)
+                renderizarDatosDelCuidadorDelPaciente(tvMiRol, colorMarca)
             } else {
                 view.findViewById<View>(R.id.cardQr)?.visibility = View.GONE
                 btnCerrarSesion.visibility = View.VISIBLE
@@ -115,54 +126,77 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
 
                 btnAccionDinamica.apply {
                     visibility = View.VISIBLE
-                    text = "Editar Datos Personales"
+                    text = "Editar Mis Datos"
+                    setIconResource(R.drawable.edit)
                     setOnClickListener { mostrarDialogoModificarDatos(tvMiRol) }
                 }
-                renderizarDatosPersonalesCompletosPaciente(tvMiRol)
+                renderizarDatosPersonalesCompletosPaciente(tvMiRol, colorMarca)
             }
         }
     }
 
-    private fun renderizarDatosPropiosLocal(textView: TextView) {
+    private fun formatearFichaElegante(colorResaltado: Int, vararg lineas: Pair<String, String>): CharSequence {
+        val builder = SpannableStringBuilder()
+        lineas.forEachIndexed { index, par ->
+            val inicio = builder.length
+            builder.append(par.first)
+
+            builder.setSpan(StyleSpan(Typeface.BOLD), inicio, builder.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            builder.setSpan(ForegroundColorSpan(colorResaltado), inicio, builder.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+            builder.append("  ").append(par.second)
+            if (index < lineas.size - 1) {
+                builder.append("\n\n")
+            }
+        }
+        return builder
+    }
+
+    private fun renderizarDatosPropiosLocal(textView: TextView, color: Int) {
         db.collection("usuarios").document(miUid).get().addOnSuccessListener { doc ->
             if (doc.exists()) {
                 val nombreCompleto = doc.getString("nombreCompleto") ?: "No registrado"
                 val tel = doc.getString("telefono") ?: "No registrado"
 
-                val html = "<b>👤 Nombre:</b> $nombreCompleto<br><br>" +
-                        "<b>📧 Usuario:</b> $miUsuario<br><br>" +
-                        "<b>📞 Teléfono:</b> $tel"
-                textView.text = Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY)
+                textView.text = formatearFichaElegante(color,
+                    "Nombre completo:" to nombreCompleto,
+                    "Cuenta de usuario:" to miUsuario,
+                    "Teléfono de contacto:" to tel
+                )
             }
         }
     }
 
-    private fun renderizarDatosPersonalesCompletosPaciente(textView: TextView) {
+    private fun renderizarDatosPersonalesCompletosPaciente(textView: TextView, color: Int) {
         db.collection("usuarios").document(miUid).get().addOnSuccessListener { doc ->
             if (doc.exists()) {
                 val nombreComp = doc.getString("nombreCompleto") ?: "No registrado"
                 val tel = doc.getString("telefono") ?: "No registrado"
                 val emg = doc.getString("contactoEmergencia") ?: "No registrado"
                 val nss = doc.getString("nss") ?: "No registrado"
+                val nombreEmergencia = doc.getString("nombreContactoEmergencia") ?: "No registrado"
 
-                val html = "<b>👤 Nombre Completo:</b> $nombreComp<br><br>" +
-                        "<b>📧 Cuenta de Usuario:</b> $miUsuario<br><br>" +
-                        "<b>📞 Mi Teléfono:</b> $tel<br><br>" +
-                        "<b>🪪 Nº Seguridad Social:</b> $nss<br><br>" +
-                        "<b>🚨 Contacto Urgencia / Tutor Legal:</b> $emg"
-                textView.text = Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY)
+                textView.text = formatearFichaElegante(color,
+                    "Nombre completo:" to nombreComp,
+                    "Cuenta de usuario:" to miUsuario,
+                    "Teléfono personal:" to tel,
+                    "Número de Seguridad Social:" to nss,
+                    "Nombre del contacto de emergencia:" to nombreEmergencia,
+                    "Teléfono del contacto de emergencia / Tutor:" to emg
+                )
             }
         }
     }
 
-    private fun renderizarDatosDelCuidadorDelPaciente(textView: TextView) {
+    private fun renderizarDatosDelCuidadorDelPaciente(textView: TextView, color: Int) {
         vinculacionListener = db.collection("vinculaciones")
             .whereEqualTo("pacienteUid", miUid)
             .addSnapshotListener { snapshots, error ->
                 if (error != null || snapshots == null || snapshots.isEmpty) {
-                    val htmlVacio = "<b>⚠️ Estado:</b> Sin cuidador vinculado todavía.<br><br>" +
-                            "👉 Muestra el código QR de arriba a tu cuidador o tutor legal para enlazar vuestras cuentas."
-                    textView.text = Html.fromHtml(htmlVacio, Html.FROM_HTML_MODE_LEGACY)
+                    textView.text = formatearFichaElegante(color,
+                        "Estado:" to "Sin cuidador vinculado actualmente.",
+                        "Información:" to "Muestra el código QR de arriba a tu cuidador o tutor legal para enlazar las cuentas de forma segura."
+                    )
                     return@addSnapshotListener
                 }
 
@@ -176,12 +210,12 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                         val telC = docCuidador.getString("telefono") ?: "No aportado"
                         val correoC = docCuidador.getString("correo") ?: "No aportado"
 
-                        val htmlConCuidador = "<b>👤 Mi Cuidador:</b> $nombreC<br><br>" +
-                                "<b>📞 Teléfono:</b> $telC<br><br>" +
-                                "<b>📧 Correo:</b> $correoC<br><br>" +
-                                "-----------------------------------------<br>" +
-                                "<i>ℹ️ Puedes añadir a más cuidadores. Sólo deben escanear el QR.</i>"
-                        textView.text = Html.fromHtml(htmlConCuidador, Html.FROM_HTML_MODE_LEGACY)
+                        textView.text = formatearFichaElegante(color,
+                            "Cuidador asignado:" to nombreC,
+                            "Teléfono de contacto:" to telC,
+                            "Correo electrónico:" to correoC,
+                            "Información:" to "Puedes añadir a más acompañantes de confianza compartiendo este mismo código QR."
+                        )
                     }
                 }
             }
@@ -208,7 +242,6 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
             layoutParams = lp
         }
 
-        // InputType.TYPE_CLASS_TEXT para permitir letras y números en el AN
         val etNss = EditText(ctx).apply {
             hint = "Número de la Seguridad Social"
             inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
@@ -216,9 +249,16 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
             if (miRol == "Cuidador") visibility = View.GONE
         }
 
-        val etEmergencia = EditText(ctx).apply {
-            hint = "Persona de contacto de emergencia / Tutor"
+        val etNombreEmergencia = EditText(ctx).apply {
+            hint = "Nombre del contacto de emergencia / Tutor"
             inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_WORDS
+            layoutParams = lp
+            if (miRol == "Cuidador") visibility = View.GONE // 🛠️ CORREGIDO: Oculto para cuidador
+        }
+
+        val etEmergencia = EditText(ctx).apply {
+            hint = "Teléfono de contacto de emergencia / Tutor"
+            inputType = android.text.InputType.TYPE_CLASS_PHONE // 🛠️ CORREGIDO: Teclado numérico para el teléfono
             layoutParams = lp
             if (miRol == "Cuidador") visibility = View.GONE
         }
@@ -226,6 +266,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         contenedorProgramatico.addView(etNombreCompleto)
         contenedorProgramatico.addView(etTelefono)
         contenedorProgramatico.addView(etNss)
+        contenedorProgramatico.addView(etNombreEmergencia)
         contenedorProgramatico.addView(etEmergencia)
 
         db.collection("usuarios").document(miUid).get().addOnSuccessListener { doc ->
@@ -233,6 +274,8 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                 etNombreCompleto.setText(doc.getString("nombreCompleto") ?: "")
                 etTelefono.setText(doc.getString("telefono") ?: "")
                 etNss.setText(doc.getString("nss") ?: "")
+                etNombreEmergencia.setText(doc.getString("nombreContactoEmergencia") ?: "")
+                // 🛠️ CORREGIDO: La clave correcta en BD es "contactoEmergencia"
                 etEmergencia.setText(doc.getString("contactoEmergencia") ?: "")
             }
         }
@@ -245,6 +288,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                 val nuevoNom = etNombreCompleto.text.toString().trim()
                 val nuevoTel = etTelefono.text.toString().trim()
                 val nuevoNss = etNss.text.toString().trim()
+                val nombreEmergencia = etNombreEmergencia.text.toString().trim()
                 val nuevoEmg = etEmergencia.text.toString().trim()
 
                 if (nuevoNom.isBlank() || nuevoTel.isBlank()) {
@@ -256,21 +300,23 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                     "nombreCompleto" to nuevoNom,
                     "telefono" to nuevoTel,
                     "nss" to nuevoNss,
+                    "nombreContactoEmergencia" to nombreEmergencia,
                     "contactoEmergencia" to nuevoEmg
                 )
 
                 db.collection("usuarios").document(miUid).update(mapaDatos)
                     .addOnSuccessListener {
                         Toast.makeText(ctx, "Ficha actualizada con éxito", Toast.LENGTH_SHORT).show()
+                        val colorMarca = ContextCompat.getColor(requireContext(), R.color.md_theme_light_primary)
                         if (miRol == "Paciente") {
                             val origenVista = arguments?.getString("ORIGEN")
                             if (origenVista == "CARD_CUIDADORES") {
-                                renderizarDatosDelCuidadorDelPaciente(textViewActualizar)
+                                renderizarDatosDelCuidadorDelPaciente(textViewActualizar, colorMarca)
                             } else {
-                                renderizarDatosPersonalesCompletosPaciente(textViewActualizar)
+                                renderizarDatosPersonalesCompletosPaciente(textViewActualizar, colorMarca)
                             }
                         } else {
-                            renderizarDatosPropiosLocal(textViewActualizar)
+                            renderizarDatosPropiosLocal(textViewActualizar, colorMarca)
                         }
                     }
             }
