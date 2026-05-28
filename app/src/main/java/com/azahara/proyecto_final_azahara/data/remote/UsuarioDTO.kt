@@ -1,8 +1,5 @@
 package com.azahara.proyecto_final_azahara.data.remote
 
-/**
- * DTO para registrar los perfiles y roles en Cloud Firestore.
- */
 data class UsuarioDTO(
     val uid: String = "",
     val nombreUsuario: String = "",

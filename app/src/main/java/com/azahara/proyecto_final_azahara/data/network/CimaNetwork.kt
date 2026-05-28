@@ -47,7 +47,6 @@ interface CimaApi {
     ): List<SeccionDocDto>
 }
 
-// --- CLIENTE RETROFIT SINGLETON ---
 object RetrofitClient {
     private const val BASE_URL = "https://cima.aemps.es/cima/rest/"
 

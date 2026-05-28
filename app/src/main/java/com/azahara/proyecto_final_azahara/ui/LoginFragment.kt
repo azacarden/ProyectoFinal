@@ -88,7 +88,6 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
                                 putString("firebase_uid", state.uid)
                                 putString("usuario_identificado", state.nombreUsuario)
                                 putString("rol_usuario", state.rol)
-                                // 🛠️ Guardamos si quiere ser recordado
                                 putBoolean("recordar_sesion", cbRecordar.isChecked)
                                 apply()
                             }

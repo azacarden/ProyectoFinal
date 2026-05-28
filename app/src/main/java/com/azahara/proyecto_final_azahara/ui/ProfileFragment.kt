@@ -253,12 +253,12 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
             hint = "Nombre del contacto de emergencia / Tutor"
             inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_WORDS
             layoutParams = lp
-            if (miRol == "Cuidador") visibility = View.GONE // 🛠️ CORREGIDO: Oculto para cuidador
+            if (miRol == "Cuidador") visibility = View.GONE
         }
 
         val etEmergencia = EditText(ctx).apply {
             hint = "Teléfono de contacto de emergencia / Tutor"
-            inputType = android.text.InputType.TYPE_CLASS_PHONE // 🛠️ CORREGIDO: Teclado numérico para el teléfono
+            inputType = android.text.InputType.TYPE_CLASS_PHONE
             layoutParams = lp
             if (miRol == "Cuidador") visibility = View.GONE
         }
@@ -275,7 +275,6 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                 etTelefono.setText(doc.getString("telefono") ?: "")
                 etNss.setText(doc.getString("nss") ?: "")
                 etNombreEmergencia.setText(doc.getString("nombreContactoEmergencia") ?: "")
-                // 🛠️ CORREGIDO: La clave correcta en BD es "contactoEmergencia"
                 etEmergencia.setText(doc.getString("contactoEmergencia") ?: "")
             }
         }

@@ -36,7 +36,6 @@ class AppointmentViewModel(
 
     var ultimaCitaGuardada: CitaMedica? = null
 
-    // 🛠️ ACTUALIZADO CON VALIDACIÓN DE CENTRO HOSPITALARIO
     fun validarCita(motivo: String, medico: String, especialidad: String, centroHospital: String, fechaHoraMilis: Long): String? {
         if (motivo.isBlank()) return "El motivo de la cita es obligatorio."
         if (medico.isBlank()) return "El nombre del médico es obligatorio."
