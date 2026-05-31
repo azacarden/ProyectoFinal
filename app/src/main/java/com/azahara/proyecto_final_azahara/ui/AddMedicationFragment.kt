@@ -252,7 +252,7 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
                         }
                         is CimaUiState.Error -> {
                             progressBar.visibility = View.GONE
-                            Snackbar.make(view, state.message, Snackbar.LENGTH_INDEFINITE)
+                            Snackbar.make(view, state.message, Snackbar.LENGTH_LONG)
                                 .setAction("Reintentar") { viewModel.buscarMedicamento(etSearch.text.toString().trim()) }
                                 .show()
                         }

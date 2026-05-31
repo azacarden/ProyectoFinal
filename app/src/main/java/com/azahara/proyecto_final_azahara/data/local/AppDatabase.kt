@@ -21,8 +21,8 @@ import com.azahara.proyecto_final_azahara.model.Usuario
         AlarmaGeneral::class
     ],
 
-    // Cada vez que añadimos algo al modelo, debemos aumentar la versió. Si no fallará
-    version = 14,
+    // Cada vez que añadimos algo al modelo, debemos aumentar la versión. Si no fallará
+    version = 15,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

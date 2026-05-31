@@ -36,7 +36,9 @@ data class SeccionDocDto(
 )
 
 interface CimaApi {
-    @GET("medicamentos")
+
+    // Se usa ?comerc=1 para filtrar solo los medicamentos comercializados
+    @GET("medicamentos?comerc=1")
     suspend fun buscarMedicamentos(
         @Query("nombre") nombre: String
     ): MedicamentosResponse

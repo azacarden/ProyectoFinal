@@ -33,7 +33,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:hint="Ej: Paracetamol" />
+                android:hint="Busca tu medicamento" />
             <Button
                 android:id="@+id/btnSearch"
                 android:layout_width="wrap_content"
@@ -56,7 +56,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:hint="Nombre del medicamento"
+            android:hint="O añade sólo su nombre"
             app:layout_constraintTop_toBottomOf="@id/llBuscador">
 
             <com.google.android.material.textfield.TextInputEditText
