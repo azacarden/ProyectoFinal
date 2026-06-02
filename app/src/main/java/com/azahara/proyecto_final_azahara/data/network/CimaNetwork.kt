@@ -43,6 +43,11 @@ interface CimaApi {
         @Query("nombre") nombre: String
     ): MedicamentosResponse
 
+    @GET("medicamentos?comerc=1")
+    suspend fun buscarPorCN(
+        @Query("cn") cn: String
+    ): MedicamentosResponse
+
     @GET("docSegmentado/contenido/1")
     suspend fun getFichaTecnica(
         @Query("nregistro") nregistro: String

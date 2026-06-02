@@ -59,6 +59,29 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
     private lateinit var actvDiaSemana: AutoCompleteTextView
     private lateinit var actvDiaMes: AutoCompleteTextView
 
+
+    // Abre el escaner de códigos de barras
+    private val barcodeLauncher = registerForActivityResult(com.journeyapps.barcodescanner.ScanContract()) { result ->
+        if (result.contents != null) {
+            procesarDataMatrix(result.contents)
+        } else {
+            Toast.makeText(requireContext(), "Escaneo cancelado", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // Extrae el CN de la caja del medicamento y lo busca en la API de CIMA
+    private fun procesarDataMatrix(datosBrutos: String) {
+        val indice = datosBrutos.indexOf("847000")
+
+        if (indice != -1 && datosBrutos.length >= indice + 12) {
+            val inicioCN = indice + 6
+            val codigoNacional = datosBrutos.substring(inicioCN, inicioCN + 6)
+            viewModel.buscarMedicamentoPorCN(codigoNacional)
+        } else {
+            Toast.makeText(requireContext(), "Código no válido o medicamento no español.", Toast.LENGTH_LONG).show()
+        }
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -79,6 +102,7 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
         val rgFrecuencia = view.findViewById<RadioGroup>(R.id.rgFrecuencia)
         val rbSemanal = view.findViewById<RadioButton>(R.id.rbSemanal)
         val rbMensual = view.findViewById<RadioButton>(R.id.rbMensual)
+        val btnEscanearCaja = view.findViewById<ImageButton>(R.id.btnEscanearCaja)
 
         llOpcionesFrecuencia = view.findViewById(R.id.llOpcionesFrecuencia)
         tilDiaSemana = view.findViewById(R.id.tilDiaSemana)
@@ -188,6 +212,15 @@ class AddMedicationFragment : Fragment(R.layout.fragment_add_medication) {
                 .show()
         }
 
+        // Acción del botón escanear
+        btnEscanearCaja.setOnClickListener {
+            val options = com.journeyapps.barcodescanner.ScanOptions().apply {
+                setPrompt("Escanea el código cuadrado de la caja (Data Matrix)")
+                setBeepEnabled(true)
+                setOrientationLocked(false)
+            }
+            barcodeLauncher.launch(options)
+        }
         btnSearch.setOnClickListener {
             viewModel.buscarMedicamento(etSearch.text.toString().trim())
         }

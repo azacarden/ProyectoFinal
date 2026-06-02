@@ -75,6 +75,31 @@ class AddMedicationViewModel(
         }
     }
 
+    fun buscarMedicamentoPorCN(cn: String) {
+        if (cn.isBlank()) return
+
+        viewModelScope.launch {
+            _uiState.value = CimaUiState.Loading
+            try {
+                val resultados = repository.buscarPorCN(cn)
+
+                if (resultados.isEmpty()) {
+                    _uiState.value = CimaUiState.Error("No se encontró el medicamento con código $cn.")
+                } else {
+                    // Si lo encuentra, reutilizamos el estado de éxito.
+                    // Mostrará un diálogo con el medicamento exacto para que el usuario lo confirme.
+                    _uiState.value = CimaUiState.SuccessList(resultados)
+                }
+            } catch (e: Exception) {
+                if (e is java.net.UnknownHostException || e is java.net.ConnectException) {
+                    _uiState.value = CimaUiState.Error("Sin conexión a Internet.")
+                } else {
+                    _uiState.value = CimaUiState.Error("Error al buscar el código. Intenta escribir el nombre.")
+                }
+            }
+        }
+    }
+
     suspend fun verificarContraindicaciones(nombreNuevo: String): String? {
         val misMedicamentos = medicamentoDao.obtenerTodosLosMedicamentosConHorariosSync()
         for (medConHorarios in misMedicamentos) {

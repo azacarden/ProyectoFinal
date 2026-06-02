@@ -22,6 +22,13 @@ class CimaRepository(private val api: CimaApi) {
         }
     }
 
+    // Función para buscar por CN
+    suspend fun buscarPorCN(cn: String): List<MedicamentoBasicoDto> {
+        return withContext(Dispatchers.IO) {
+            api.buscarPorCN(cn).resultados ?: emptyList()
+        }
+    }
+
     // Le pasamos el objeto entero para poder sacar las vías de administracion y su prospecto
     suspend fun obtenerDetalleCompleto(medicamento: MedicamentoBasicoDto): MedicamentoDetalle {
         return withContext(Dispatchers.IO) {
