@@ -1,21 +1,14 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# Mantener las clases de modelo de base de datos (ROOM)
+-keep class com.azahara.proyecto_final_azahara.model.** { *; }
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Mantener los DTOs de Firebase Firestore para que no falle la sincronización ni el login
+-keep class com.azahara.proyecto_final_azahara.data.remote.** { *; }
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Mantener los DTOs de la API de CIMA (Retrofit/Gson) para que funcione el buscador
+-keep class com.azahara.proyecto_final_azahara.data.network.** { *; }
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Reglas generales para Gson (el traductor de JSON a Kotlin)
+-keepattributes Signature
+-keepattributes *Annotation*
+-keep class sun.misc.Unsafe { *; }
+-keep class com.google.gson.** { *; }
